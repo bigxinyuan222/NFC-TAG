@@ -44,6 +44,7 @@
 
 <script>
 	import { getSession, hasSession, saveSession } from '@/utils/session'
+	import { BASE_URL } from '@/utils/config'
 
 	export default {
 		data() {
@@ -74,7 +75,7 @@
 			handleDepartmentInput(event) {
 				this.form.department = event.detail.value
 			},
-			register() {
+			async register() {
 				if (this.isSubmitting) {
 					return
 				}
@@ -93,22 +94,23 @@
 				}
 
 				this.isSubmitting = true
-				saveSession({ userName, department })
-
-				uni.reLaunch({
-					url: '/pages/checkin/index',
-					fail: (error) => {
-						this.isSubmitting = false
-						uni.showModal({
-							title: '跳转失败',
-							content: JSON.stringify(error),
-							showCancel: false
-						})
-					},
-					success: () => {
-						this.isSubmitting = false
+				try {
+					const res = await uni.request({
+						url: BASE_URL + '/api/login',
+						method: 'POST',
+						data: { userName, department }
+					})
+					if (res.statusCode === 200 && res.data.code === 0) {
+						const d = res.data.data
+						saveSession({ userName: d.userName, department: d.department, token: d.token })
+						uni.reLaunch({ url: '/pages/checkin/index' })
+					} else {
+						uni.showToast({ title: res.data.msg || '登记失败', icon: 'none' })
 					}
-				})
+				} catch (e) {
+					uni.showToast({ title: '网络错误', icon: 'none' })
+				}
+				this.isSubmitting = false
 			}
 		}
 	}

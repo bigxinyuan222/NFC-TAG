@@ -94,7 +94,8 @@
 
 <script>
 	import CheckinResult from '@/components/checkin-result/index.vue'
-	import { clearPendingCheckinResult, clearSession, getPendingCheckinResult, getSession, setPendingCheckinResult } from '@/utils/session'
+	import { clearPendingCheckinResult, clearSession, getPendingCheckinResult, getSession, getToken, setPendingCheckinResult } from '@/utils/session'
+	import { BASE_URL } from '@/utils/config'
 	import { formatClockTime, formatDateText } from '@/utils/time'
 
 	export default {
@@ -179,19 +180,46 @@
 				setPendingCheckinResult(payload)
 				this.consumePendingResult()
 			},
-			consumePendingResult() {
+			async consumePendingResult() {
 				const payload = getPendingCheckinResult()
 
 				if (!payload) {
 					return
 				}
 
+				let success = payload.success !== false
+				let message = payload.message || '打卡已受理'
+
+				try {
+					const loc = await uni.getLocation({ type: 'gcj02' })
+					const res = await uni.request({
+						url: BASE_URL + '/api/checkin',
+						method: 'POST',
+						header: { 'Authorization': 'Bearer ' + getToken() },
+						data: {
+							pointId: payload.pointId,
+							longitude: loc.longitude,
+							latitude: loc.latitude
+						}
+					})
+					if (res.statusCode === 200 && res.data.code === 0) {
+						success = true
+						message = '打卡成功'
+					} else {
+						success = false
+						message = res.data.msg || '打卡失败'
+					}
+				} catch (e) {
+					success = false
+					message = '定位或网络失败'
+				}
+
 				const date = new Date(payload.time || Date.now())
 				const displayTime = formatClockTime(date)
 
 				this.result = {
-					success: payload.success !== false,
-					message: payload.message || '打卡已受理',
+					success,
+					message,
 					pointId: payload.pointId || '',
 					timeText: displayTime
 				}
