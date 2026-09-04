@@ -1,5 +1,5 @@
 <template>
-	<view class="wrap">
+	<view class="wrap" :class="currentTheme === 'dark' ? 'theme-dark' : 'theme-light'">
 		<view class="main-shell">
 			<view class="hero">
 				<view class="logo-shell">
@@ -45,10 +45,12 @@
 <script>
 	import { getSession, hasSession, saveSession } from '@/utils/session'
 	import { BASE_URL } from '@/utils/config'
+	import { getTheme } from '@/utils/theme'
 
 	export default {
 		data() {
 			return {
+				currentTheme: 'light',
 				form: {
 					userName: '',
 					department: ''
@@ -57,6 +59,7 @@
 			}
 		},
 		onShow() {
+			this.currentTheme = getTheme()
 			if (hasSession()) {
 				uni.reLaunch({
 					url: '/pages/checkin/index'
@@ -320,5 +323,53 @@
 		color: #a0a8b8;
 		font-size: 22rpx;
 		text-align: center;
+	}
+
+	.theme-dark {
+		background: linear-gradient(180deg, #0f1115 0%, #171a20 55%, #0f1115 100%);
+	}
+
+	.theme-dark .wrap::before {
+		background: radial-gradient(circle at 50% 0, rgba(120, 120, 120, 0.18) 0, rgba(120, 120, 120, 0) 62%);
+	}
+
+	.theme-dark .wrap::after {
+		background: radial-gradient(circle at 50% 100%, rgba(90, 90, 90, 0.16) 0, rgba(90, 90, 90, 0) 68%);
+	}
+
+	.theme-dark .logo-core,
+	.theme-dark .card {
+		background: rgba(24, 27, 33, 0.96);
+		box-shadow: none;
+	}
+
+	.theme-dark .welcome {
+		color: #e5e7eb;
+	}
+
+	.theme-dark .title,
+	.theme-dark .label,
+	.theme-dark .input,
+	.theme-dark .copyright {
+		color: #f3f4f6;
+	}
+
+	.theme-dark .subtitle,
+	.theme-dark .safety-text {
+		color: #9ca3af;
+	}
+
+	.theme-dark .input-wrap {
+		border-color: #2a2f37;
+		background: #111318;
+	}
+
+	.theme-dark .input-placeholder {
+		color: #6b7280;
+	}
+
+	.theme-dark .submit-btn {
+		background: linear-gradient(135deg, #2b2f36 0%, #16181d 100%);
+		box-shadow: none;
 	}
 </style>

@@ -1,5 +1,5 @@
 <template>
-	<view class="wrap">
+	<view class="wrap" :class="currentTheme === 'dark' ? 'theme-dark' : 'theme-light'">
 		<view class="screen-shell">
 			<view class="hero-row">
 				<view class="hero-text">
@@ -10,8 +10,11 @@
 					</view>
 				</view>
 				<view class="avatar" @longpress="logout">
-					<view class="avatar-head"></view>
-					<view class="avatar-body"></view>
+					<image v-if="avatarUrl && !avatarLoadFailed" class="avatar-image" :src="avatarUrl" mode="aspectFill" @error="handleAvatarError" />
+					<view v-else class="avatar-fallback">
+						<view class="avatar-head"></view>
+						<view class="avatar-body"></view>
+					</view>
 				</view>
 			</view>
 
@@ -39,7 +42,7 @@
 			<view class="card">
 				<view class="records-head">
 					<text class="records-title">今日记录</text>
-					<text class="records-side">查看全部</text>
+					<text class="records-side" @tap="goRecords">查看全部</text>
 				</view>
 
 				<view class="record-row">
@@ -48,8 +51,8 @@
 						<text class="record-label">上班打卡</text>
 					</view>
 					<view class="record-right">
-						<text class="record-value">{{ morningText }}</text>
-						<text class="record-state success">✓</text>
+						<text class="record-value" :class="{ 'muted-text': !morningChecked }">{{ morningText }}</text>
+						<text class="record-state" :class="morningChecked ? 'success' : 'muted-state'">{{ morningChecked ? '✓' : '−' }}</text>
 					</view>
 				</view>
 
@@ -59,27 +62,14 @@
 						<text class="record-label">下班打卡</text>
 					</view>
 					<view class="record-right">
-						<text class="record-value muted-text">{{ eveningText }}</text>
-						<text class="record-state muted-state">−</text>
+						<text class="record-value" :class="{ 'muted-text': !eveningChecked }">{{ eveningText }}</text>
+						<text class="record-state" :class="eveningChecked ? 'success' : 'muted-state'">{{ eveningChecked ? '✓' : '−' }}</text>
 					</view>
 				</view>
 			</view>
 		</view>
 
-		<view class="tabbar">
-			<view class="tab-item active">
-				<image class="tab-icon" src="/static/icons/home-active.svg" mode="aspectFit" />
-				<text class="tab-label">首页</text>
-			</view>
-			<view class="tab-item">
-				<image class="tab-icon" src="/static/icons/record-muted.svg" mode="aspectFit" />
-				<text class="tab-label">记录</text>
-			</view>
-			<view class="tab-item">
-				<image class="tab-icon" src="/static/icons/profile-muted.svg" mode="aspectFit" />
-				<text class="tab-label">我的</text>
-			</view>
-		</view>
+		<app-tabbar current="checkin" :theme="currentTheme" />
 
 		<checkin-result
 			:visible="resultVisible"
@@ -93,25 +83,34 @@
 </template>
 
 <script>
+	import AppTabbar from '@/components/app-tabbar/index.vue'
 	import CheckinResult from '@/components/checkin-result/index.vue'
 	import { clearPendingCheckinResult, clearSession, getPendingCheckinResult, getSession, getToken, setPendingCheckinResult } from '@/utils/session'
 	import { BASE_URL } from '@/utils/config'
+	import { getTodayCheckinSummary, saveCheckinRecord } from '@/utils/checkin-record'
+	import { getTheme } from '@/utils/theme'
 	import { formatClockTime, formatDateText } from '@/utils/time'
 
 	export default {
 		components: {
+			AppTabbar,
 			CheckinResult
 		},
 		data() {
 			return {
 				userName: '',
 				department: '',
+				avatarUrl: '',
+				avatarLoadFailed: false,
+				currentTheme: 'light',
 				timeText: '',
 				dateText: '',
 				timer: null,
 				resultVisible: false,
-				morningText: '09:26',
+				morningText: '未打卡',
 				eveningText: '未打卡',
+				morningChecked: false,
+				eveningChecked: false,
 				result: {
 					success: true,
 					message: '',
@@ -121,9 +120,12 @@
 			}
 		},
 		onShow() {
-			const { userName, department } = getSession()
+			const { userName, department, avatarUrl } = getSession()
 			this.userName = userName
 			this.department = department
+				this.avatarUrl = avatarUrl
+				this.avatarLoadFailed = false
+			this.currentTheme = getTheme()
 
 			if (!this.userName || !this.department) {
 				clearSession()
@@ -132,6 +134,7 @@
 			}
 
 			this.refreshClock()
+			this.refreshTodaySummary()
 			this.startClock()
 			this.consumePendingResult()
 		},
@@ -147,10 +150,25 @@
 					url: '/pages/login/index'
 				})
 			},
+			goRecords() {
+				uni.reLaunch({
+					url: '/pages/records/index'
+				})
+			},
 			refreshClock() {
 				const now = new Date()
 				this.timeText = formatClockTime(now)
 				this.dateText = formatDateText(now)
+			},
+			refreshTodaySummary() {
+				const summary = getTodayCheckinSummary({
+					userName: this.userName,
+					department: this.department
+				})
+				this.morningText = summary.morningText
+				this.eveningText = summary.eveningText
+				this.morningChecked = summary.morningChecked
+				this.eveningChecked = summary.eveningChecked
 			},
 			startClock() {
 				this.stopClock()
@@ -224,18 +242,21 @@
 					timeText: displayTime
 				}
 
-				if (this.morningText === '09:26' || this.morningText === '未打卡') {
-					this.morningText = displayTime
-				} else {
-					this.eveningText = displayTime
-				}
+				saveCheckinRecord({
+					userName: this.userName,
+					department: this.department
+				}, payload)
+				this.refreshTodaySummary()
 
 				this.resultVisible = true
 				clearPendingCheckinResult()
 			},
-			closeResult() {
-				this.resultVisible = false
-			}
+				closeResult() {
+					this.resultVisible = false
+				},
+				handleAvatarError() {
+					this.avatarLoadFailed = true
+				}
 		}
 	}
 </script>
@@ -311,6 +332,17 @@
 		border-radius: 50%;
 		background: rgba(255, 255, 255, 0.78);
 		box-shadow: 0 10rpx 24rpx rgba(91, 118, 183, 0.12);
+		overflow: hidden;
+	}
+
+	.avatar-image,
+	.avatar-fallback {
+		width: 100%;
+		height: 100%;
+	}
+
+	.avatar-image {
+		border-radius: 50%;
 	}
 
 	.avatar-head {
@@ -333,6 +365,33 @@
 		margin-left: -21rpx;
 		border-radius: 24rpx 24rpx 18rpx 18rpx;
 		background: #2f6dff;
+	}
+
+	.theme-dark {
+		background: linear-gradient(180deg, #0f1115 0%, #171a20 55%, #0f1115 100%);
+	}
+
+	.theme-dark .title,
+	.theme-dark .time-text,
+	.theme-dark .records-title,
+	.theme-dark .record-label,
+	.theme-dark .record-value {
+		color: #f3f4f6;
+	}
+
+	.theme-dark .subtitle,
+	.theme-dark .date-text,
+	.theme-dark .tip,
+	.theme-dark .records-side,
+	.theme-dark .muted-text,
+	.theme-dark .muted-state {
+		color: #9ca3af;
+	}
+
+	.theme-dark .card,
+	.theme-dark .avatar {
+		background: rgba(24, 27, 33, 0.96);
+		box-shadow: none;
 	}
 
 	.center-panel {
@@ -526,39 +585,7 @@
 		color: #ffffff;
 	}
 
-	.tabbar {
-		position: fixed;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		display: flex;
-		align-items: center;
-		justify-content: space-around;
-		height: 116rpx;
-		padding-bottom: env(safe-area-inset-bottom);
-		background: rgba(255, 255, 255, 0.96);
-		box-shadow: 0 -8rpx 24rpx rgba(32, 44, 80, 0.06);
-	}
-
-	.tab-item {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 10rpx;
-		color: #979fad;
-	}
-
-	.tab-item.active {
-		color: #2f6dff;
-	}
-
-	.tab-icon {
-		width: 58rpx;
-		height: 58rpx;
-	}
-
-	.tab-label {
-		font-size: 24rpx;
+	.records-side {
+		line-height: 1.4;
 	}
 </style>
