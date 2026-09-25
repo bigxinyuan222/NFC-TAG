@@ -27,6 +27,7 @@
 			<view class="logout-card" @tap="handleLogout">
 				<text class="logout-text">退出登录</text>
 			</view>
+
 		</scroll-view>
 
 		<app-tabbar current="profile" :theme="currentTheme" />
@@ -112,21 +113,18 @@
 					icon: 'none'
 				})
 			},
-				handleLogout() {
-					uni.showModal({
-					title: '退出登录',
-					content: '确认退出当前账号吗？',
+			handleLogout() {
+				uni.showModal({
+					title: '提示',
+					content: '确定要退出登录吗？',
 					success: (res) => {
-						if (!res.confirm) {
-							return
+						if (res.confirm) {
+							clearSession()
+							this.goLogin()
 						}
-
-						clearPendingCheckinResult()
-						clearSession()
-						this.goLogin()
 					}
-					})
-				},
+				})
+			},
 				handleAvatarError() {
 					this.avatarLoadFailed = true
 				}

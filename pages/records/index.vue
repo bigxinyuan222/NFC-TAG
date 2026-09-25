@@ -17,7 +17,32 @@
 				<image class="date-arrow-icon" src="/static/icons/chevron-right.svg" mode="aspectFit" @tap="shiftDate(1)" />
 			</view>
 
-			<view class="summary-card">
+			<view class="stats-card">
+			<view class="stats-head">
+				<text class="stats-title">{{ monthStats.monthText }}考勤统计</text>
+				<text class="stats-side">9:00后迟到 · 18:00前早退</text>
+			</view>
+			<view class="stats-grid">
+				<view class="stat-cell">
+					<text class="stat-num stat-primary">{{ monthStats.attendDays }}</text>
+					<text class="stat-label">出勤(天)</text>
+				</view>
+				<view class="stat-cell">
+					<text class="stat-num" :class="{ 'stat-warn': monthStats.lateCount > 0 }">{{ monthStats.lateCount }}</text>
+					<text class="stat-label">迟到(次)</text>
+				</view>
+				<view class="stat-cell">
+					<text class="stat-num" :class="{ 'stat-warn': monthStats.earlyLeaveCount > 0 }">{{ monthStats.earlyLeaveCount }}</text>
+					<text class="stat-label">早退(次)</text>
+				</view>
+				<view class="stat-cell">
+					<text class="stat-num" :class="{ 'stat-warn': monthStats.missCount > 0 }">{{ monthStats.missCount }}</text>
+					<text class="stat-label">缺卡(次)</text>
+				</view>
+			</view>
+		</view>
+
+		<view class="summary-card">
 				<view class="summary-col">
 					<view class="summary-main-row">
 						<image class="summary-icon" src="/static/icons/check-circle.svg" mode="aspectFit" />
@@ -77,8 +102,8 @@
 </template>
 
 	<script>
-		import AppTabbar from '@/components/app-tabbar/index.vue'
-		import { getUserCheckinRecords } from '@/utils/checkin-record'
+	import AppTabbar from '@/components/app-tabbar/index.vue'
+	import { getMonthlyCheckinStats, getUserCheckinRecords } from '@/utils/checkin-record'
 		import { clearSession, getSession } from '@/utils/session'
 		import { getTheme } from '@/utils/theme'
 
@@ -117,10 +142,17 @@
 				selectedWeekText: '',
 				morningText: '未打卡',
 				eveningText: '未打卡',
-				morningChecked: false,
-				eveningChecked: false,
-				recordList: [],
-				dayRecordList: []
+			morningChecked: false,
+			eveningChecked: false,
+			monthStats: {
+				attendDays: 0,
+				lateCount: 0,
+				earlyLeaveCount: 0,
+				missCount: 0,
+				monthText: ''
+			},
+			recordList: [],
+			dayRecordList: []
 			}
 		},
 		onShow() {
@@ -151,19 +183,23 @@
 				this.selectedDateKey = formatDateKey(new Date())
 				this.refreshSelectedDate()
 			},
-			refreshSelectedDate() {
-				const date = parseDateKey(this.selectedDateKey)
-				this.selectedDateText = getDisplayDateText(date)
-				this.selectedWeekText = getWeekText(date)
-				const dayRecords = this.recordList.filter((item) => item.dateKey === this.selectedDateKey)
-				this.dayRecordList = dayRecords
-				const morningRecord = dayRecords.find((item) => item.type === 'morning' && item.status === 'success')
-				const eveningRecord = dayRecords.find((item) => item.type === 'evening' && item.status === 'success')
-				this.morningText = morningRecord ? morningRecord.displayTime : '未打卡'
-				this.eveningText = eveningRecord ? eveningRecord.displayTime : '未打卡'
-				this.morningChecked = !!morningRecord
-				this.eveningChecked = !!eveningRecord
-			},
+		refreshSelectedDate() {
+			const date = parseDateKey(this.selectedDateKey)
+			this.selectedDateText = getDisplayDateText(date)
+			this.selectedWeekText = getWeekText(date)
+			const dayRecords = this.recordList.filter((item) => item.dateKey === this.selectedDateKey)
+			this.dayRecordList = dayRecords
+			const morningRecord = dayRecords.find((item) => item.type === 'morning' && item.status === 'success')
+			const eveningRecord = dayRecords.find((item) => item.type === 'evening' && item.status === 'success')
+			this.morningText = morningRecord ? morningRecord.displayTime : '未打卡'
+			this.eveningText = eveningRecord ? eveningRecord.displayTime : '未打卡'
+			this.morningChecked = !!morningRecord
+			this.eveningChecked = !!eveningRecord
+			this.monthStats = getMonthlyCheckinStats({
+				userName: this.userName,
+				department: this.department
+			}, date)
+		},
 			handleDateChange(event) {
 				this.selectedDateKey = event.detail.value
 				this.refreshSelectedDate()
@@ -194,6 +230,8 @@
 	}
 
 	.theme-dark .page-title,
+	.theme-dark .stats-title,
+	.theme-dark .stat-num,
 	.theme-dark .summary-time,
 	.theme-dark .section-title,
 	.theme-dark .record-name,
@@ -201,7 +239,17 @@
 		color: #f3f4f6;
 	}
 
+	.theme-dark .stat-primary {
+		color: #7ea3ff;
+	}
+
+	.theme-dark .stat-warn {
+		color: #e8a45c;
+	}
+
 	.theme-dark .date-text,
+	.theme-dark .stats-side,
+	.theme-dark .stat-label,
 	.theme-dark .summary-label,
 	.theme-dark .summary-state,
 	.theme-dark .section-side,
@@ -215,6 +263,7 @@
 	}
 
 	.theme-dark .date-bar,
+	.theme-dark .stats-card,
 	.theme-dark .summary-card,
 	.theme-dark .list-card {
 		background: rgba(24, 27, 33, 0.96);
@@ -230,6 +279,7 @@
 	.header-row,
 	.date-bar,
 	.date-center,
+	.stats-head,
 	.summary-card,
 	.summary-main-row,
 	.section-head,
@@ -242,6 +292,7 @@
 	}
 
 	.header-row,
+	.stats-head,
 	.section-head,
 	.record-top-row,
 	.record-bottom-row {
@@ -265,10 +316,62 @@
 	}
 
 	.date-bar,
+	.stats-card,
 	.summary-card,
 	.list-card {
 		background: rgba(255, 255, 255, 0.98);
 		box-shadow: 0 12rpx 30rpx rgba(45, 68, 128, 0.06);
+	}
+
+	.stats-card {
+		width: 640rpx;
+		margin: 30rpx auto 0;
+		padding: 28rpx 28rpx 26rpx;
+		border-radius: 28rpx;
+	}
+
+	.stats-title {
+		color: #182033;
+		font-size: 27rpx;
+		font-weight: 700;
+	}
+
+	.stats-side {
+		color: #9aa3b3;
+		font-size: 21rpx;
+	}
+
+	.stats-grid {
+		display: flex;
+		margin-top: 28rpx;
+	}
+
+	.stat-cell {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 12rpx;
+	}
+
+	.stat-num {
+		color: #182033;
+		font-size: 48rpx;
+		font-weight: 700;
+		line-height: 1;
+	}
+
+	.stat-primary {
+		color: #2f6dff;
+	}
+
+	.stat-warn {
+		color: #e08838;
+	}
+
+	.stat-label {
+		color: #8b94a6;
+		font-size: 21rpx;
 	}
 
 	.date-bar {
@@ -315,7 +418,7 @@
 
 	.summary-card {
 		width: 640rpx;
-		margin: 46rpx auto 0;
+		margin: 30rpx auto 0;
 		padding: 28rpx 0 26rpx;
 		border-radius: 28rpx;
 	}

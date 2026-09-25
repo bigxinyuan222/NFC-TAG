@@ -15,6 +15,13 @@
 			}
 		},
 		{
+			"path": "pages/checkin-success/index",
+			"style": {
+				"navigationBarTitleText": "打卡结果",
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "pages/records/index",
 			"style": {
 				"navigationBarTitleText": "记录",

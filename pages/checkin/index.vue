@@ -287,7 +287,7 @@
 		align-items: flex-start;
 		justify-content: space-between;
 		gap: 24rpx;
-		margin-top: 18rpx;
+		margin-top: 100rpx;
 	}
 
 	.hero-text {

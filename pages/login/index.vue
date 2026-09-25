@@ -22,6 +22,14 @@
 				</view>
 
 				<view class="field">
+					<text class="label">密码</text>
+					<view class="input-wrap">
+						<image class="input-icon" src="/static/icons/shield.svg" mode="aspectFit" />
+						<input class="input" :value="form.password" @input="handlePasswordInput" placeholder="请输入密码" placeholder-class="input-placeholder" password />
+					</view>
+				</view>
+
+				<view class="field">
 					<text class="label">部门</text>
 					<view class="input-wrap">
 						<image class="input-icon" src="/static/icons/building.svg" mode="aspectFit" />
@@ -44,7 +52,6 @@
 
 <script>
 	import { getSession, hasSession, saveSession } from '@/utils/session'
-	import { BASE_URL } from '@/utils/config'
 	import { getTheme } from '@/utils/theme'
 
 	export default {
@@ -53,7 +60,8 @@
 				currentTheme: 'light',
 				form: {
 					userName: '',
-					department: ''
+					department: '',
+					password: ''
 				},
 				isSubmitting: false
 			}
@@ -78,6 +86,9 @@
 			handleDepartmentInput(event) {
 				this.form.department = event.detail.value
 			},
+			handlePasswordInput(event) {
+				this.form.password = event.detail.value
+			},
 			async register() {
 				if (this.isSubmitting) {
 					return
@@ -87,8 +98,9 @@
 
 				const userName = (this.form.userName || '').trim()
 				const department = (this.form.department || '').trim()
+				const password = (this.form.password || '').trim()
 
-				if (!userName || !department) {
+				if (!userName || !department || !password) {
 					uni.showToast({
 						title: '请填写完整信息',
 						icon: 'none'
@@ -97,22 +109,13 @@
 				}
 
 				this.isSubmitting = true
-				try {
-					const res = await uni.request({
-						url: BASE_URL + '/api/login',
-						method: 'POST',
-						data: { userName, department }
-					})
-					if (res.statusCode === 200 && res.data.code === 0) {
-						const d = res.data.data
-						saveSession({ userName: d.userName, department: d.department, token: d.token })
-						uni.reLaunch({ url: '/pages/checkin/index' })
-					} else {
-						uni.showToast({ title: res.data.msg || '登记失败', icon: 'none' })
-					}
-				} catch (e) {
-					uni.showToast({ title: '网络错误', icon: 'none' })
-				}
+				// 后端接口暂未就绪，测试阶段直接保存本地会话进入主界面
+				saveSession({
+					userName,
+					department,
+					token: 'local-test-token'
+				})
+				uni.reLaunch({ url: '/pages/checkin/index' })
 				this.isSubmitting = false
 			}
 		}
@@ -130,7 +133,7 @@
 		flex-direction: column;
 		height: 100vh;
 		height: 100dvh;
-		padding: 28rpx 28rpx 24rpx;
+		padding: 100rpx 28rpx 24rpx;
 		overflow: hidden;
 		background: linear-gradient(180deg, #eef4ff 0%, #f7faff 66%, #edf3ff 100%);
 		box-sizing: border-box;
@@ -170,7 +173,7 @@
 
 	.hero {
 		position: relative;
-		margin-top: 0;
+		margin-top: 60rpx;
 		flex-shrink: 0;
 		text-align: center;
 	}

@@ -2,6 +2,13 @@ import { formatClockTime } from './time'
 
 const STORAGE_KEY = 'checkinRecords'
 
+// 上/下班打卡归属分界：12 点前打卡计入上班卡，12 点及以后计入下班卡
+const MORNING_END_HOUR = 12
+
+// 月度考勤统计参考：09:00 后打上班卡计迟到，18:00 前打下班卡计早退
+const LATE_AFTER_HOUR = 9
+const EARLY_LEAVE_BEFORE_HOUR = 18
+
 function getIdentity(session) {
 	const userName = session && session.userName ? session.userName : ''
 	const department = session && session.department ? session.department : ''
@@ -54,7 +61,8 @@ export function saveCheckinRecord(session, payload) {
 	const sameDayRecords = getUserCheckinRecords(session)
 		.filter((record) => record.dateKey === dateKey)
 		.sort((left, right) => left.time - right.time)
-	const type = sameDayRecords.length === 0 ? 'morning' : 'evening'
+	// 按打卡时刻判定归属，避免下午打的卡被记成"上班打卡"的不合理显示
+	const type = date.getHours() < MORNING_END_HOUR ? 'morning' : 'evening'
 	const nextRecord = {
 		id: String(time) + '-' + String(sameDayRecords.length + 1),
 		identityKey,
@@ -78,19 +86,96 @@ export function saveCheckinRecord(session, payload) {
 }
 
 export function getTodayCheckinSummary(session) {
-	const todayKey = formatDateKey(new Date())
+	const now = new Date()
+	const todayKey = formatDateKey(now)
 	const todayRecords = getUserCheckinRecords(session).filter((record) => record.dateKey === todayKey)
-	const morningRecord = todayRecords.find((record) => record.type === 'morning')
-	const eveningRecord = todayRecords.find((record) => record.type === 'evening')
-	const latestRecord = todayRecords[0] || null
+	const successRecords = todayRecords.filter((record) => record.status === 'success')
+	const morningRecords = successRecords.filter((record) => record.type === 'morning')
+	const eveningRecords = successRecords.filter((record) => record.type === 'evening')
+	// 上班卡取当天最早一次，下班卡取当天最晚一次
+	const morningRecord = morningRecords.length
+		? morningRecords.reduce((earliest, item) => (item.time < earliest.time ? item : earliest))
+		: null
+	const eveningRecord = eveningRecords.length
+		? eveningRecords.reduce((latest, item) => (item.time > latest.time ? item : latest))
+		: null
 
 	return {
-		morningText: morningRecord ? morningRecord.displayTime : '未打卡',
-		eveningText: eveningRecord ? eveningRecord.displayTime : '未打卡',
 		morningChecked: !!morningRecord,
 		eveningChecked: !!eveningRecord,
-		latestTime: latestRecord ? latestRecord.displayTime : '',
+		morningTime: morningRecord ? morningRecord.displayTime : '',
+		eveningTime: eveningRecord ? eveningRecord.displayTime : '',
+		morningStatusText: morningRecord ? '已完成上班打卡' : '未打卡',
+		eveningStatusText: eveningRecord ? '已完成下班打卡' : '未打卡',
+		// 当前时间所处的打卡时段，用于驱动待打卡提示随时间变化
+		isMorningPhase: now.getHours() < MORNING_END_HOUR,
+		latestTime: todayRecords[0] ? todayRecords[0].displayTime : '',
 		total: todayRecords.length
+	}
+}
+
+export function getMonthlyCheckinStats(session, date = new Date()) {
+	const year = date.getFullYear()
+	const month = date.getMonth()
+	const monthPrefix = year + '-' + String(month + 1).padStart(2, '0') + '-'
+	const todayKey = formatDateKey(new Date())
+
+	// 当月成功打卡记录按天分组：上班卡取最早一次，下班卡取最晚一次
+	const dayMap = {}
+	getUserCheckinRecords(session)
+		.filter((record) => record.status === 'success' && record.dateKey.indexOf(monthPrefix) === 0)
+		.forEach((record) => {
+			if (!dayMap[record.dateKey]) {
+				dayMap[record.dateKey] = { morning: null, evening: null }
+			}
+			const slot = dayMap[record.dateKey]
+			if (record.type === 'morning') {
+				if (!slot.morning || record.time < slot.morning.time) {
+					slot.morning = record
+				}
+			} else {
+				if (!slot.evening || record.time > slot.evening.time) {
+					slot.evening = record
+				}
+			}
+		})
+
+	let attendDays = 0
+	let lateCount = 0
+	let earlyLeaveCount = 0
+	let missCount = 0
+
+	Object.keys(dayMap).forEach((key) => {
+		const { morning, evening } = dayMap[key]
+		if (!morning && !evening) {
+			return
+		}
+		// 有任一成功打卡即计为出勤
+		attendDays++
+		if (morning) {
+			const morningDate = new Date(morning.time)
+			if (morningDate.getHours() * 60 + morningDate.getMinutes() > LATE_AFTER_HOUR * 60) {
+				lateCount++
+			}
+		}
+		if (evening) {
+			const eveningDate = new Date(evening.time)
+			if (eveningDate.getHours() * 60 + eveningDate.getMinutes() < EARLY_LEAVE_BEFORE_HOUR * 60) {
+				earlyLeaveCount++
+			}
+		}
+		// 缺卡：仅统计已过去的日期（当天状态未定，不参与）
+		if (key < todayKey && ((morning && !evening) || (!morning && evening))) {
+			missCount++
+		}
+	})
+
+	return {
+		attendDays,
+		lateCount,
+		earlyLeaveCount,
+		missCount,
+		monthText: (month + 1) + '月'
 	}
 }
 
