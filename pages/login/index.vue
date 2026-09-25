@@ -29,7 +29,7 @@
 					</view>
 				</view>
 
-				<view class="field">
+				<view v-if="!isLoginMode" class="field">
 					<text class="label">部门</text>
 					<view class="input-wrap">
 						<image class="input-icon" src="/static/icons/building.svg" mode="aspectFit" />
@@ -37,7 +37,11 @@
 					</view>
 				</view>
 
-				<view class="submit-btn" @tap.stop="register">进入系统</view>
+				<view class="submit-btn" @tap.stop="handleSubmit">{{ isLoginMode ? '登录' : '注册' }}</view>
+				<view class="switch-login" @tap.stop="handleSwitchMode">
+					<text class="switch-tip">{{ isLoginMode ? '还没有账号？' : '已有账号？' }}</text>
+					<text class="switch-link">{{ isLoginMode ? '点击去注册' : '点击去登录' }}</text>
+				</view>
 			</view>
 		</view>
 
@@ -47,11 +51,13 @@
 		</view>
 
 		<text class="copyright">© 2026 乐知智能考勤 版权所有</text>
+
 	</view>
 </template>
 
 <script>
 	import { getSession, hasSession, saveSession } from '@/utils/session'
+	import { registerAccount, loginAccount } from '@/utils/auth-api'
 	import { getTheme } from '@/utils/theme'
 
 	export default {
@@ -63,6 +69,7 @@
 					department: '',
 					password: ''
 				},
+				isLoginMode: false,
 				isSubmitting: false
 			}
 		},
@@ -80,6 +87,20 @@
 			this.form.department = department
 		},
 		methods: {
+			handleSubmit() {
+				if (this.isLoginMode) {
+					this.login()
+					return
+				}
+				this.register()
+			},
+			handleSwitchMode() {
+				if (this.isLoginMode) {
+					this.switchToRegister()
+					return
+				}
+				this.switchToLogin()
+			},
 			handleNameInput(event) {
 				this.form.userName = event.detail.value
 			},
@@ -88,6 +109,14 @@
 			},
 			handlePasswordInput(event) {
 				this.form.password = event.detail.value
+			},
+			switchToLogin() {
+				this.form.password = ''
+				this.isLoginMode = true
+			},
+			switchToRegister() {
+				this.form.password = ''
+				this.isLoginMode = false
 			},
 			async register() {
 				if (this.isSubmitting) {
@@ -109,14 +138,67 @@
 				}
 
 				this.isSubmitting = true
-				// 后端接口暂未就绪，测试阶段直接保存本地会话进入主界面
+				try {
+					const result = await registerAccount({ userName, department, password })
+					this.saveUserSession(result)
+					uni.reLaunch({ url: '/pages/checkin/index' })
+				} catch (error) {
+					this.showRequestError(error)
+				} finally {
+					this.isSubmitting = false
+				}
+			},
+			async login() {
+				if (this.isSubmitting) {
+					return
+				}
+
+				uni.hideKeyboard()
+
+				const userName = (this.form.userName || '').trim()
+				const password = (this.form.password || '').trim()
+
+				if (!userName || !password) {
+					uni.showToast({
+						title: '请输入姓名和密码',
+						icon: 'none'
+					})
+					return
+				}
+
+				this.isSubmitting = true
+				try {
+					const result = await loginAccount({ userName, password })
+					this.saveUserSession(result)
+					this.isLoginMode = false
+					uni.reLaunch({ url: '/pages/checkin/index' })
+				} catch (error) {
+					this.showRequestError(error)
+				} finally {
+					this.isSubmitting = false
+				}
+			},
+			saveUserSession(result) {
+				const payload = result && result.data ? result.data : result
+				const user = payload && payload.user ? payload.user : payload
+				const token = payload && (payload.token || payload.accessToken)
+
+				if (!user || !user.userName || !user.department || !token) {
+					throw new Error('登录接口返回数据格式不正确')
+				}
+
 				saveSession({
-					userName,
-					department,
-					token: 'local-test-token'
+					userName: user.userName,
+					department: user.department,
+					avatarUrl: user.avatarUrl || '',
+					token
 				})
-				uni.reLaunch({ url: '/pages/checkin/index' })
-				this.isSubmitting = false
+			},
+			showRequestError(error) {
+				uni.showToast({
+					title: error && error.message ? error.message : '网络请求失败',
+					icon: 'none'
+				})
 			}
 		}
 	}
@@ -293,6 +375,24 @@
 		box-shadow: 0 18rpx 36rpx rgba(56, 94, 214, 0.24);
 		color: #ffffff;
 		font-size: 30rpx;
+		font-weight: 600;
+	}
+
+	.switch-login {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-top: 26rpx;
+		font-size: 24rpx;
+	}
+
+	.switch-tip {
+		color: #9099ac;
+	}
+
+	.switch-link {
+		margin-left: 8rpx;
+		color: #2f6dff;
 		font-weight: 600;
 	}
 
