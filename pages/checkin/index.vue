@@ -25,7 +25,7 @@
 				<view class="pulse-wrap">
 					<view class="pulse-ring pulse-ring-outer"></view>
 					<view class="pulse-ring pulse-ring-inner"></view>
-					<view class="pulse-core" @click="mockCheckin">
+					<view class="pulse-core" @click="handleCheckin">
 						<view class="pulse-icon">
 							<image class="pulse-wave" src="/static/icons/checkin-wave.svg" mode="aspectFit" />
 						</view>
@@ -107,6 +107,7 @@
 				dateText: '',
 				timer: null,
 				resultVisible: false,
+				isCheckingIn: false,
 				morningText: '未打卡',
 				eveningText: '未打卡',
 				morningChecked: false,
@@ -187,11 +188,15 @@
 				clearPendingCheckinResult()
 				this.goLogin()
 			},
-			mockCheckin() {
+			handleCheckin() {
+				if (this.isCheckingIn) {
+					return
+				}
+
 				const payload = {
-					success: true,
-					message: '已模拟完成一次打卡，可替换为真实设备回调结果',
-					pointId: 'DEMO-01',
+					success: false,
+					message: '正在获取位置并提交打卡',
+					pointId: 'point-001',
 					time: Date.now()
 				}
 
@@ -201,35 +206,69 @@
 			async consumePendingResult() {
 				const payload = getPendingCheckinResult()
 
-				if (!payload) {
+				if (!payload || this.isCheckingIn) {
 					return
 				}
 
-				let success = payload.success !== false
-				let message = payload.message || '打卡已受理'
+				this.isCheckingIn = true
+				let success = false
+				let message = payload.message || '打卡失败'
+				let distanceMeters = null
+				let maxDistanceMeters = null
 
 				try {
-					const loc = await uni.getLocation({ type: 'gcj02' })
+					const token = getToken()
+					if (!token) {
+						throw new Error('登录状态已失效，请重新登录')
+					}
+					if (!payload.pointId) {
+						throw new Error('未识别到有效的打卡点')
+					}
+
+					const loc = await uni.getLocation({ type: 'wgs84' })
 					const res = await uni.request({
 						url: BASE_URL + '/api/checkin',
 						method: 'POST',
-						header: { 'Authorization': 'Bearer ' + getToken() },
+						header: {
+							'Authorization': 'Bearer ' + token,
+							'Content-Type': 'application/json'
+						},
 						data: {
 							pointId: payload.pointId,
 							longitude: loc.longitude,
 							latitude: loc.latitude
 						}
 					})
-					if (res.statusCode === 200 && res.data.code === 0) {
+					const body = res.data && typeof res.data === 'object' ? res.data : {}
+					if (res.statusCode === 200 && body.code === 0) {
 						success = true
-						message = '打卡成功'
+						message = body.msg || '打卡成功'
+						distanceMeters = body.data && body.data.distanceMeters
+						maxDistanceMeters = body.data && body.data.maxDistanceMeters
+						console.log('[打卡成功]', {
+							pointId: payload.pointId,
+							longitude: loc.longitude,
+							latitude: loc.latitude,
+							response: body
+						})
 					} else {
-						success = false
-						message = res.data.msg || '打卡失败'
+						message = body.msg || '打卡失败'
+						console.error('[打卡接口响应失败]', {
+							url: BASE_URL + '/api/checkin',
+							statusCode: res.statusCode,
+							response: res.data,
+							pointId: payload.pointId,
+							longitude: loc.longitude,
+							latitude: loc.latitude
+						})
 					}
 				} catch (e) {
-					success = false
-					message = '定位或网络失败'
+					message = e && (e.message || e.errMsg) ? (e.message || e.errMsg) : '定位或网络失败'
+					console.error('[打卡失败原因]', message)
+					console.error('[打卡失败]', {
+						pointId: payload.pointId || '',
+						error: e
+					})
 				}
 
 				const date = new Date(payload.time || Date.now())
@@ -245,11 +284,20 @@
 				saveCheckinRecord({
 					userName: this.userName,
 					department: this.department
-				}, payload)
+				}, {
+					pointId: payload.pointId || '',
+					time: payload.time || Date.now(),
+					success,
+					message,
+					distanceMeters,
+					maxDistanceMeters,
+					source: 'api'
+				})
 				this.refreshTodaySummary()
 
 				this.resultVisible = true
 				clearPendingCheckinResult()
+				this.isCheckingIn = false
 			},
 				closeResult() {
 					this.resultVisible = false

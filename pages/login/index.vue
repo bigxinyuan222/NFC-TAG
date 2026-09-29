@@ -31,10 +31,19 @@
 
 				<view v-if="!isLoginMode" class="field">
 					<text class="label">部门</text>
-					<view class="input-wrap">
-						<image class="input-icon" src="/static/icons/building.svg" mode="aspectFit" />
-						<input class="input" :value="form.department" @input="handleDepartmentInput" placeholder="请选择部门" placeholder-class="input-placeholder" />
-					</view>
+					<picker
+						class="department-picker"
+						mode="selector"
+						:range="departmentOptions"
+						:value="departmentIndex"
+						@change="handleDepartmentChange"
+					>
+						<view class="input-wrap picker-wrap">
+							<image class="input-icon" src="/static/icons/building.svg" mode="aspectFit" />
+							<text class="input department-value" :class="{ 'input-placeholder': !form.department }">{{ form.department || '请选择部门' }}</text>
+							<image class="picker-arrow" src="/static/icons/chevron-right.svg" mode="aspectFit" />
+						</view>
+					</picker>
 				</view>
 
 				<view class="submit-btn" @tap.stop="handleSubmit">{{ isLoginMode ? '登录' : '注册' }}</view>
@@ -69,22 +78,24 @@
 					department: '',
 					password: ''
 				},
+				departmentOptions: ['27鹰飞', '26鹰飞', '全栈二期', 'ROS机器人'],
+				departmentIndex: 0,
 				isLoginMode: false,
 				isSubmitting: false
 			}
 		},
-		onShow() {
+			onShow() {
 			this.currentTheme = getTheme()
 			if (hasSession()) {
-				uni.reLaunch({
-					url: '/pages/checkin/index'
-				})
+				this.goCheckin()
 				return
 			}
 
 			const { userName, department } = getSession()
 			this.form.userName = userName
-			this.form.department = department
+			const departmentIndex = this.departmentOptions.indexOf(department)
+			this.departmentIndex = departmentIndex >= 0 ? departmentIndex : 0
+			this.form.department = departmentIndex >= 0 ? department : ''
 		},
 		methods: {
 			handleSubmit() {
@@ -104,8 +115,26 @@
 			handleNameInput(event) {
 				this.form.userName = event.detail.value
 			},
-			handleDepartmentInput(event) {
-				this.form.department = event.detail.value
+			handleDepartmentChange(event) {
+				const index = Number(event.detail.value)
+				this.departmentIndex = index
+				this.form.department = this.departmentOptions[index] || ''
+			},
+			goCheckin() {
+				uni.reLaunch({
+					url: '/pages/checkin/index',
+					fail: (error) => {
+						console.error('[页面跳转失败]', {
+							url: '/pages/checkin/index',
+							error
+						})
+						uni.showToast({
+							title: '页面未加载，请重新编译小程序',
+							icon: 'none',
+							duration: 2500
+						})
+					}
+				})
 			},
 			handlePasswordInput(event) {
 				this.form.password = event.detail.value
@@ -136,13 +165,30 @@
 					})
 					return
 				}
+				if (userName.length > 64 || department.length > 64 || password.length > 128) {
+					uni.showToast({
+						title: '姓名和部门最多64个字符，密码最多128个字符',
+						icon: 'none'
+					})
+					return
+				}
 
 				this.isSubmitting = true
 				try {
 					const result = await registerAccount({ userName, department, password })
+					console.log('[注册成功]', {
+						userName,
+						department,
+						response: result
+					})
 					this.saveUserSession(result)
-					uni.reLaunch({ url: '/pages/checkin/index' })
+					this.goCheckin()
 				} catch (error) {
+					console.error('[注册失败]', {
+						userName,
+						department,
+						error
+					})
 					this.showRequestError(error)
 				} finally {
 					this.isSubmitting = false
@@ -165,14 +211,28 @@
 					})
 					return
 				}
+				if (userName.length > 64 || password.length > 128) {
+					uni.showToast({
+						title: '姓名最多64个字符，密码最多128个字符',
+						icon: 'none'
+					})
+					return
+				}
 
 				this.isSubmitting = true
 				try {
 					const result = await loginAccount({ userName, password })
+					console.log('[登录成功]', {
+						userName,
+						response: result
+					})
 					this.saveUserSession(result)
-					this.isLoginMode = false
-					uni.reLaunch({ url: '/pages/checkin/index' })
+					this.goCheckin()
 				} catch (error) {
+					console.error('[登录失败]', {
+						userName,
+						error
+					})
 					this.showRequestError(error)
 				} finally {
 					this.isSubmitting = false
@@ -183,8 +243,8 @@
 				const user = payload && payload.user ? payload.user : payload
 				const token = payload && (payload.token || payload.accessToken)
 
-				if (!user || !user.userName || !user.department || !token) {
-					throw new Error('登录接口返回数据格式不正确')
+				if (!token || !user || !user.userName || !user.department) {
+					throw new Error('认证接口返回数据格式不正确')
 				}
 
 				saveSession({
@@ -344,6 +404,16 @@
 		background: #ffffff;
 	}
 
+	.department-picker {
+		display: block;
+		width: 100%;
+	}
+
+	.picker-wrap {
+		width: 100%;
+		box-sizing: border-box;
+	}
+
 	.input-icon {
 		flex-shrink: 0;
 		width: 46rpx;
@@ -359,9 +429,21 @@
 		font-size: 26rpx;
 	}
 
+	.department-value {
+		display: flex;
+		align-items: center;
+	}
+
 	.input-placeholder {
 		color: #b3bac8;
 		font-size: 26rpx;
+	}
+
+	.picker-arrow {
+		flex-shrink: 0;
+		width: 30rpx;
+		height: 30rpx;
+		opacity: 0.55;
 	}
 
 	.submit-btn {
