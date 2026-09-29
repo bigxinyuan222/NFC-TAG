@@ -1,3 +1,4 @@
 unpackage/
 .DS_Store
 .hbuilderx/
+project.private.config.json
