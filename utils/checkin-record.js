@@ -53,6 +53,109 @@ export function getUserCheckinRecords(session) {
 	return sortByTimeDesc(getAllRecords().filter((record) => record.identityKey === identityKey))
 }
 
+function parseRecordTime(value) {
+	if (typeof value === 'number') {
+		return new Date(value < 100000000000 ? value * 1000 : value)
+	}
+	return new Date(value)
+}
+
+export function normalizeRemoteCheckinRecord(item, session) {
+	const date = parseRecordTime(item && item.createdAt)
+		const time = date.getTime()
+		if (!Number.isFinite(time)) {
+			return null
+		}
+		const userName = session && session.userName ? session.userName : ''
+		const department = session && session.department ? session.department : ''
+		return {
+			id: String(item.id),
+			identityKey: userName + '::' + department,
+			userName,
+			department,
+			time,
+			dateKey: formatDateKey(date),
+			displayDate: formatDisplayDate(date),
+			weekText: getWeekText(date),
+			displayTime: formatClockTime(date),
+			type: date.getHours() < MORNING_END_HOUR ? 'morning' : 'evening',
+			status: 'success',
+			pointId: item.pointId || '',
+			longitude: item.longitude,
+			latitude: item.latitude,
+			distanceMeters: item.distanceMeters,
+			message: '',
+			source: 'remote'
+		}
+}
+
+export function normalizeRemoteCheckinRecords(items, session) {
+	const recordMap = {}
+	;(Array.isArray(items) ? items : []).forEach((item) => {
+		if (!item || item.id === undefined || item.id === null) return
+		const record = normalizeRemoteCheckinRecord(item, session)
+		if (record) recordMap[record.id] = record
+	})
+	return sortByTimeDesc(Object.keys(recordMap).map((key) => recordMap[key]))
+}
+
+export function matchCheckinSlots(records, dateKey, slots) {
+	const parts = dateKey.split('-').map(Number)
+	return slots.map((slot) => {
+		const clock = slot.time.split(':').map(Number)
+		const scheduledTime = new Date(parts[0], parts[1] - 1, parts[2], clock[0], clock[1]).getTime()
+		let match = null
+		let closest = Infinity
+		;(Array.isArray(records) ? records : []).forEach((record) => {
+			if (!record || record.status !== 'success' || record.dateKey !== dateKey || !Number.isFinite(record.time)) return
+			const difference = Math.abs(record.time - scheduledTime)
+			if (difference > 10 * 60 * 1000) return
+			if (difference < closest || (difference === closest && (record.time < match.time || (record.time === match.time && String(record.id) < String(match.id))))) {
+				match = record
+				closest = difference
+			}
+		})
+		return match
+	})
+}
+
+export function getMonthlyCheckinStatsFromRecords(records, date = new Date(), options = {}) {
+	const year = date.getFullYear()
+	const month = date.getMonth()
+	const monthPrefix = year + '-' + String(month + 1).padStart(2, '0') + '-'
+	const todayKey = formatDateKey(new Date())
+	const dayMap = {}
+	;(Array.isArray(records) ? records : [])
+		.filter((record) => record.status === 'success' && record.dateKey.indexOf(monthPrefix) === 0)
+		.forEach((record) => {
+			if (!dayMap[record.dateKey]) dayMap[record.dateKey] = { morning: null, evening: null }
+			const slot = dayMap[record.dateKey]
+			if (record.type === 'morning' && (!slot.morning || record.time < slot.morning.time)) slot.morning = record
+			if (record.type === 'evening' && (!slot.evening || record.time > slot.evening.time)) slot.evening = record
+		})
+
+	let attendDays = 0
+	let lateCount = 0
+	let earlyLeaveCount = 0
+	let missCount = 0
+	Object.keys(dayMap).forEach((key) => {
+		const slot = dayMap[key]
+		if (!slot.morning && !slot.evening) return
+		attendDays++
+		if (slot.morning) {
+			const value = new Date(slot.morning.time)
+			if (value.getHours() * 60 + value.getMinutes() > LATE_AFTER_HOUR * 60) lateCount++
+		}
+		if (slot.evening) {
+			const value = new Date(slot.evening.time)
+			if (value.getHours() * 60 + value.getMinutes() < EARLY_LEAVE_BEFORE_HOUR * 60) earlyLeaveCount++
+		}
+		if (options.canCalculateMissing && key < todayKey && ((slot.morning && !slot.evening) || (!slot.morning && slot.evening))) missCount++
+	})
+
+	return { attendDays, lateCount, earlyLeaveCount, missCount, monthText: (month + 1) + '月' }
+}
+
 export function saveCheckinRecord(session, payload) {
 	const { userName, department, identityKey } = getIdentity(session)
 	const date = new Date(payload.time || Date.now())
