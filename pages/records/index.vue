@@ -1,6 +1,6 @@
 <template>
 	<view class="wrap" :class="currentTheme === 'dark' ? 'theme-dark' : 'theme-light'">
-		<scroll-view class="scroll" scroll-y>
+		<scroll-view class="scroll" scroll-y :refresher-enabled="true" :refresher-triggered="isRefreshing" @refresherrefresh="handleRefresh">
 			<view class="header-row">
 				<text class="page-title">打卡记录</text>
 				<image class="header-icon" src="/static/icons/clipboard.svg" mode="aspectFit" />
@@ -18,80 +18,48 @@
 			</view>
 
 			<view class="stats-card">
-			<view class="stats-head">
-				<text class="stats-title">{{ monthStats.monthText }}考勤统计</text>
-				<text class="stats-side">9:00后迟到 · 18:00前早退</text>
-			</view>
-			<view class="stats-grid">
-				<view class="stat-cell">
-					<text class="stat-num stat-primary">{{ monthStats.attendDays }}</text>
-					<text class="stat-label">出勤(天)</text>
+				<view class="stats-head">
+					<text class="stats-title">{{ monthStats.monthText }}考勤统计{{ recordSource === 'remote' && !remoteComplete ? (isLoading ? ' · 加载中' : ' · 数据未全') : '' }}</text>
+					<text class="stats-side">9:00后迟到 · 18:00前早退</text>
 				</view>
-				<view class="stat-cell">
-					<text class="stat-num" :class="{ 'stat-warn': monthStats.lateCount > 0 }">{{ monthStats.lateCount }}</text>
-					<text class="stat-label">迟到(次)</text>
-				</view>
-				<view class="stat-cell">
-					<text class="stat-num" :class="{ 'stat-warn': monthStats.earlyLeaveCount > 0 }">{{ monthStats.earlyLeaveCount }}</text>
-					<text class="stat-label">早退(次)</text>
-				</view>
-				<view class="stat-cell">
-					<text class="stat-num" :class="{ 'stat-warn': monthStats.missCount > 0 }">{{ monthStats.missCount }}</text>
-					<text class="stat-label">缺卡(次)</text>
-				</view>
-			</view>
-		</view>
-
-		<view class="summary-card">
-				<view class="summary-col">
-					<view class="summary-main-row">
-						<image class="summary-icon" src="/static/icons/check-circle.svg" mode="aspectFit" />
-						<view class="summary-copy">
-							<text class="summary-label">上班打卡</text>
-							<text class="summary-time">{{ morningText }}</text>
-							<text class="summary-state active-state">{{ morningChecked ? '已打卡' : '--:--' }}</text>
-						</view>
+				<view class="stats-grid">
+					<view class="stat-cell">
+						<text class="stat-num stat-primary">{{ monthStats.attendDays }}</text>
+						<text class="stat-label">出勤(天)</text>
 					</view>
-				</view>
-
-				<view class="summary-divider"></view>
-
-				<view class="summary-col">
-					<view class="summary-main-row">
-						<image class="summary-icon" src="/static/icons/clock.svg" mode="aspectFit" />
-						<view class="summary-copy">
-							<text class="summary-label">下班打卡</text>
-							<text class="summary-time" :class="{ 'muted-time': !eveningChecked }">{{ eveningText }}</text>
-							<text class="summary-state muted-state">{{ eveningChecked ? eveningText : '--:--' }}</text>
-						</view>
+					<view class="stat-cell">
+						<text class="stat-num" :class="{ 'stat-warn': monthStats.lateCount > 0 }">{{ monthStats.lateCount }}</text>
+						<text class="stat-label">迟到(次)</text>
+					</view>
+					<view class="stat-cell">
+						<text class="stat-num" :class="{ 'stat-warn': monthStats.earlyLeaveCount > 0 }">{{ monthStats.earlyLeaveCount }}</text>
+						<text class="stat-label">早退(次)</text>
+					</view>
+					<view class="stat-cell">
+						<text class="stat-num" :class="{ 'stat-warn': monthStats.missCount > 0 }">{{ monthStats.missCount }}</text>
+						<text class="stat-label">缺卡(次)</text>
 					</view>
 				</view>
 			</view>
 
-			<view class="section-head">
-				<text class="section-title">打卡记录</text>
-				<text class="section-side">{{ dayRecordList.length }} 条记录</text>
-			</view>
+			<text v-if="errorMessage" class="source-message">{{ errorMessage }}</text>
 
-			<view class="list-card">
-				<view v-if="dayRecordList.length === 0" class="empty-state">
-					<text class="empty-text">当日暂无打卡记录</text>
+			<view class="schedule-card">
+				<view class="schedule-head">
+					<text class="schedule-title">打卡记录</text>
+					<text class="schedule-date">{{ selectedDateText }}</text>
 				</view>
-				<view v-for="item in dayRecordList" :key="item.id" class="record-item">
-					<view class="record-left">
-						<image class="record-icon" :src="item.type === 'morning' ? '/static/icons/check-circle.svg' : '/static/icons/clock.svg'" mode="aspectFit" />
-						<view class="record-copy">
-							<text class="record-name">{{ item.type === 'morning' ? '上班打卡' : '下班打卡' }}</text>
-							<text class="record-date">{{ item.dateKey }}</text>
+				<view v-for="(slot, index) in checkinSlots" :key="slot.time" class="schedule-row" :class="{ 'schedule-pair-start': index > 0 && index % 2 === 0 }">
+					<view class="schedule-left">
+						<image class="schedule-icon" :src="slot.type === 'morning' ? '/static/icons/check-circle.svg' : '/static/icons/clock.svg'" mode="aspectFit" />
+						<view class="schedule-info">
+							<text class="schedule-name">{{ slot.type === 'morning' ? '上班打卡' : '下班打卡' }}</text>
+							<text class="schedule-time">{{ slot.time }}</text>
 						</view>
 					</view>
-
-					<view class="record-right">
-						<text class="record-value" :class="{ 'muted-value': item.status !== 'success' }">{{ item.status === 'success' ? item.displayTime : '未打卡' }}</text>
-						<view class="record-location">
-							<image class="location-icon" src="/static/icons/location.svg" mode="aspectFit" />
-							<text class="location-text">{{ item.department }}</text>
-						</view>
+					<view class="schedule-result">
+						<text class="schedule-status" :class="{ 'schedule-checked': slotMatches[index] }">{{ slotMatches[index] ? '已打卡' : (isLoading || (recordSource === 'remote' && !remoteComplete) ? '待确认' : '未打卡') }}</text>
+						<text v-if="slotMatches[index]" class="schedule-actual-time">{{ slotMatches[index].displayTime }}</text>
 					</view>
 				</view>
 			</view>
@@ -103,9 +71,10 @@
 
 	<script>
 	import AppTabbar from '@/components/app-tabbar/index.vue'
-	import { getMonthlyCheckinStats, getUserCheckinRecords } from '@/utils/checkin-record'
-		import { clearSession, getSession } from '@/utils/session'
-		import { getTheme } from '@/utils/theme'
+	import { getMonthlyCheckinStats, getMonthlyCheckinStatsFromRecords, getUserCheckinRecords, matchCheckinSlots, normalizeRemoteCheckinRecords } from '@/utils/checkin-record'
+	import { getMyCheckins } from '@/utils/checkin-api'
+	import { clearSession, getSession } from '@/utils/session'
+	import { getTheme } from '@/utils/theme'
 
 	function formatDateKey(date) {
 		const year = date.getFullYear()
@@ -140,19 +109,38 @@
 				selectedDateKey: '',
 				selectedDateText: '',
 				selectedWeekText: '',
-				morningText: '未打卡',
-				eveningText: '未打卡',
-			morningChecked: false,
-			eveningChecked: false,
-			monthStats: {
-				attendDays: 0,
-				lateCount: 0,
-				earlyLeaveCount: 0,
-				missCount: 0,
-				monthText: ''
-			},
-			recordList: [],
-			dayRecordList: []
+				checkinSlots: [
+					{ time: '08:00', type: 'morning' },
+					{ time: '09:40', type: 'evening' },
+					{ time: '10:10', type: 'morning' },
+					{ time: '11:50', type: 'evening' },
+					{ time: '14:30', type: 'morning' },
+					{ time: '16:10', type: 'evening' },
+					{ time: '16:40', type: 'morning' },
+					{ time: '18:20', type: 'evening' },
+					{ time: '19:30', type: 'morning' },
+					{ time: '22:00', type: 'evening' }
+				],
+				slotMatches: [],
+				monthStats: {
+					attendDays: 0,
+					lateCount: 0,
+					earlyLeaveCount: 0,
+					missCount: 0,
+					monthText: ''
+				},
+				recordList: [],
+				recordSource: '',
+				remoteRecords: [],
+				remotePage: 0,
+				remotePageSize: 100,
+				remoteTotal: 0,
+				remoteHasMore: true,
+				remoteComplete: false,
+				isLoading: false,
+				isRefreshing: false,
+				requestVersion: 0,
+				errorMessage: ''
 			}
 		},
 		onShow() {
@@ -162,6 +150,7 @@
 			this.currentTheme = getTheme()
 
 			if (!this.userName || !this.department) {
+				this.requestVersion++
 				clearSession()
 				this.goLogin()
 				return
@@ -175,31 +164,80 @@
 					url: '/pages/login/index'
 				})
 			},
-			loadRecords() {
-				this.recordList = getUserCheckinRecords({
-					userName: this.userName,
-					department: this.department
-				})
-				this.selectedDateKey = formatDateKey(new Date())
+			loadRecords(isRefresh = false) {
+				const version = ++this.requestVersion
+				if (!this.selectedDateKey) this.selectedDateKey = formatDateKey(new Date())
+				this.remoteRecords = []
+				this.remotePage = 0
+				this.remoteTotal = 0
+				this.remoteHasMore = true
+				this.remoteComplete = false
+				this.recordSource = 'remote'
+				this.errorMessage = ''
+				this.recordList = []
+				this.isLoading = true
+				this.isRefreshing = isRefresh
 				this.refreshSelectedDate()
+				this.loadAllPages(version)
 			},
-		refreshSelectedDate() {
-			const date = parseDateKey(this.selectedDateKey)
-			this.selectedDateText = getDisplayDateText(date)
-			this.selectedWeekText = getWeekText(date)
-			const dayRecords = this.recordList.filter((item) => item.dateKey === this.selectedDateKey)
-			this.dayRecordList = dayRecords
-			const morningRecord = dayRecords.find((item) => item.type === 'morning' && item.status === 'success')
-			const eveningRecord = dayRecords.find((item) => item.type === 'evening' && item.status === 'success')
-			this.morningText = morningRecord ? morningRecord.displayTime : '未打卡'
-			this.eveningText = eveningRecord ? eveningRecord.displayTime : '未打卡'
-			this.morningChecked = !!morningRecord
-			this.eveningChecked = !!eveningRecord
-			this.monthStats = getMonthlyCheckinStats({
-				userName: this.userName,
-				department: this.department
-			}, date)
-		},
+			async loadAllPages(version) {
+				try {
+					while (this.remoteHasMore) {
+						const page = this.remotePage + 1
+						const result = await getMyCheckins({ page, pageSize: this.remotePageSize })
+						if (version !== this.requestVersion) return
+						const records = normalizeRemoteCheckinRecords(result.items, {
+							userName: this.userName,
+							department: this.department
+						})
+						const recordMap = {}
+						this.remoteRecords.forEach((item) => { recordMap[item.id] = item })
+						records.forEach((item) => { recordMap[item.id] = item })
+						this.remoteRecords = Object.keys(recordMap).map((key) => recordMap[key]).sort((left, right) => right.time - left.time)
+						this.remotePage = page
+						this.remoteTotal = result.total
+						this.remoteHasMore = result.items.length > 0 && page * result.pageSize < result.total
+						this.remoteComplete = !this.remoteHasMore && (result.total === 0 || page * result.pageSize >= result.total)
+						this.recordList = this.remoteRecords
+						this.errorMessage = this.remoteComplete || this.remoteHasMore ? '' : '部分记录未加载完整，请下拉刷新重试'
+						this.refreshSelectedDate()
+					}
+				} catch (error) {
+					if (version !== this.requestVersion) return
+					if (error && error.isAuthError) {
+						this.requestVersion++
+						clearSession()
+						this.goLogin()
+						return
+					}
+					if (this.remotePage === 0) {
+						this.recordSource = 'local'
+						this.recordList = getUserCheckinRecords({ userName: this.userName, department: this.department })
+						this.errorMessage = '网络不可用，当前显示本地记录'
+					} else {
+						this.errorMessage = '部分记录未加载完整，请下拉刷新重试'
+					}
+					this.refreshSelectedDate()
+				} finally {
+					if (version === this.requestVersion) {
+						this.isLoading = false
+						this.isRefreshing = false
+					}
+				}
+			},
+			handleRefresh() {
+				if (this.isRefreshing) return
+				this.loadRecords(true)
+			},
+			refreshSelectedDate() {
+				const date = parseDateKey(this.selectedDateKey)
+				this.selectedDateText = getDisplayDateText(date)
+				this.selectedWeekText = getWeekText(date)
+				this.slotMatches = matchCheckinSlots(this.recordList, this.selectedDateKey, this.checkinSlots)
+				this.monthStats = this.recordSource === 'remote'
+					? getMonthlyCheckinStatsFromRecords(this.recordList, date, { canCalculateMissing: false })
+					: getMonthlyCheckinStats({ userName: this.userName, department: this.department }, date)
+			},
 			handleDateChange(event) {
 				this.selectedDateKey = event.detail.value
 				this.refreshSelectedDate()
@@ -232,10 +270,8 @@
 	.theme-dark .page-title,
 	.theme-dark .stats-title,
 	.theme-dark .stat-num,
-	.theme-dark .summary-time,
-	.theme-dark .section-title,
-	.theme-dark .record-name,
-	.theme-dark .record-value {
+	.theme-dark .schedule-title,
+	.theme-dark .schedule-name {
 		color: #f3f4f6;
 	}
 
@@ -250,24 +286,30 @@
 	.theme-dark .date-text,
 	.theme-dark .stats-side,
 	.theme-dark .stat-label,
-	.theme-dark .summary-label,
-	.theme-dark .summary-state,
-	.theme-dark .section-side,
-	.theme-dark .record-date,
-	.theme-dark .location-text,
-	.theme-dark .empty-text,
-	.theme-dark .muted-time,
-	.theme-dark .muted-state,
-	.theme-dark .muted-value {
+	.theme-dark .schedule-date,
+	.theme-dark .schedule-time,
+	.theme-dark .schedule-status {
+		color: #9ca3af;
+	}
+
+	.theme-dark .source-message,
+	.theme-dark .load-message {
 		color: #9ca3af;
 	}
 
 	.theme-dark .date-bar,
 	.theme-dark .stats-card,
-	.theme-dark .summary-card,
-	.theme-dark .list-card {
+	.theme-dark .schedule-card {
 		background: rgba(24, 27, 33, 0.96);
 		box-shadow: none;
+	}
+
+	.theme-dark .schedule-row {
+		border-color: #30343b;
+	}
+
+	.theme-dark .schedule-checked {
+		color: #7ea3ff;
 	}
 
 	.scroll {
@@ -280,22 +322,17 @@
 	.date-bar,
 	.date-center,
 	.stats-head,
-	.summary-card,
-	.summary-main-row,
-	.section-head,
-	.record-top-row,
-	.record-bottom-row,
-	.record-left,
-	.record-location {
+	.schedule-head,
+	.schedule-row,
+	.schedule-left {
 		display: flex;
 		align-items: center;
 	}
 
 	.header-row,
 	.stats-head,
-	.section-head,
-	.record-top-row,
-	.record-bottom-row {
+	.schedule-head,
+	.schedule-row {
 		justify-content: space-between;
 	}
 
@@ -317,16 +354,17 @@
 
 	.date-bar,
 	.stats-card,
-	.summary-card,
-	.list-card {
+	.schedule-card {
 		background: rgba(255, 255, 255, 0.98);
 		box-shadow: 0 12rpx 30rpx rgba(45, 68, 128, 0.06);
 	}
 
 	.stats-card {
 		width: 640rpx;
+		max-width: 100%;
 		margin: 30rpx auto 0;
 		padding: 28rpx 28rpx 26rpx;
+		box-sizing: border-box;
 		border-radius: 28rpx;
 	}
 
@@ -334,6 +372,11 @@
 		color: #182033;
 		font-size: 27rpx;
 		font-weight: 700;
+	}
+
+	.stats-head {
+		flex-wrap: wrap;
+		gap: 8rpx;
 	}
 
 	.stats-side {
@@ -416,184 +459,90 @@
 		white-space: nowrap;
 	}
 
-	.summary-card {
+	.schedule-card {
 		width: 640rpx;
+		max-width: 100%;
 		margin: 30rpx auto 0;
-		padding: 28rpx 0 26rpx;
+		padding: 8rpx 28rpx 12rpx;
+		box-sizing: border-box;
 		border-radius: 28rpx;
 	}
 
-	.summary-col {
-		flex: 1;
-		padding: 0 28rpx;
-		box-sizing: border-box;
+	.schedule-head {
+		min-height: 82rpx;
 	}
 
-	.summary-divider {
-		width: 1rpx;
-		height: 140rpx;
-		background: rgba(228, 233, 242, 0.9);
-	}
-
-	.summary-label {
-		display: block;
-		color: #4f586b;
-		font-size: 24rpx;
-		font-weight: 600;
-		line-height: 1.2;
-	}
-
-	.summary-main-row {
-		gap: 10rpx;
-		align-items: center;
-	}
-
-	.summary-copy {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-	}
-
-	.summary-icon {
-		width: 66rpx;
-		height: 66rpx;
-		flex-shrink: 0;
-	}
-
-	.summary-time {
-		color: #182033;
-		font-size: 46rpx;
-		font-weight: 700;
-		line-height: 1;
-		margin-top: 12rpx;
-	}
-
-	.muted-time {
-		color: #a5acba;
-	}
-
-	.summary-state {
-		display: block;
-		margin-top: 12rpx;
-		font-size: 22rpx;
-		font-weight: 600;
-	}
-
-	.active-state {
-		color: #2f6dff;
-	}
-
-	.muted-state {
-		color: #a0a8b8;
-	}
-
-	.section-head {
-		margin-top: 40rpx;
-		width: 640rpx;
-		margin-left: auto;
-		margin-right: auto;
-	}
-
-	.section-title {
+	.schedule-title {
 		color: #182033;
 		font-size: 27rpx;
 		font-weight: 700;
 	}
 
-	.section-side {
-		color: #9aa3b3;
+	.schedule-date {
+		color: #8b94a6;
 		font-size: 21rpx;
 	}
 
-	.list-card {
-		width: 640rpx;
-		margin-top: 18rpx;
-		margin-left: auto;
-		margin-right: auto;
-		border-radius: 28rpx;
-		overflow: hidden;
+	.schedule-row {
+		min-height: 106rpx;
+		border-top: 1rpx solid #edf0f5;
 	}
 
-	.empty-state {
-		padding: 52rpx 28rpx;
-		text-align: center;
+	.schedule-row.schedule-pair-start {
+		border-top-style: dashed;
 	}
 
-	.empty-text {
-		color: #9aa3b3;
-		font-size: 24rpx;
-	}
-
-	.record-item {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 28rpx 28rpx 24rpx;
-	}
-
-	.record-item + .record-item {
-		border-top: 1rpx solid rgba(229, 234, 242, 0.92);
-	}
-
-	.record-left {
+	.schedule-left {
 		gap: 16rpx;
 		min-width: 0;
 	}
 
-	.record-icon {
-		width: 46rpx;
-		height: 46rpx;
+	.schedule-icon {
+		width: 42rpx;
+		height: 42rpx;
 		flex-shrink: 0;
 	}
 
-	.record-copy,
-	.record-right {
+	.schedule-info {
 		display: flex;
 		flex-direction: column;
-		justify-content: center;
+		gap: 6rpx;
 	}
 
-	.record-right {
+	.schedule-name {
+		color: #182033;
+		font-size: 26rpx;
+		font-weight: 600;
+	}
+
+	.schedule-time,
+	.schedule-status,
+	.schedule-actual-time {
+		color: #8b94a6;
+		font-size: 23rpx;
+	}
+
+	.schedule-result {
+		display: flex;
+		flex-direction: column;
 		align-items: flex-end;
 		flex-shrink: 0;
+		gap: 6rpx;
 	}
 
-	.record-name {
-		color: #182033;
-		font-size: 28rpx;
+	.schedule-checked {
+		color: #2f6dff;
 		font-weight: 600;
-		line-height: 1.2;
 	}
 
-	.record-value {
-		color: #182033;
-		font-size: 30rpx;
-		font-weight: 700;
-		line-height: 1.2;
+	.source-message {
+		display: block;
+		width: 640rpx;
+		max-width: 100%;
+		margin: 12rpx auto 0;
+		color: #8a94a6;
+		font-size: 22rpx;
+		text-align: center;
 	}
 
-	.muted-value {
-		color: #a4acbb;
-	}
-
-	.record-date,
-	.location-text {
-		color: #8b94a6;
-		font-size: 21rpx;
-		line-height: 1.2;
-	}
-
-	.record-date {
-		margin-top: 12rpx;
-	}
-
-	.record-location {
-		gap: 8rpx;
-		margin-top: 12rpx;
-	}
-
-	.location-icon {
-		width: 32rpx;
-		height: 32rpx;
-	}
 </style>
