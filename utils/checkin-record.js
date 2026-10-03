@@ -9,6 +9,21 @@ const MORNING_END_HOUR = 12
 const LATE_AFTER_HOUR = 9
 const EARLY_LEAVE_BEFORE_HOUR = 18
 
+export const CHECKIN_SLOTS = [
+	{ time: '08:00', type: 'morning', pointId: 'point-001' },
+	{ time: '09:40', type: 'evening', pointId: 'point-001' },
+	{ time: '10:10', type: 'morning', pointId: 'point-001' },
+	{ time: '11:50', type: 'evening', pointId: 'point-001' },
+	{ time: '14:30', type: 'morning', pointId: 'point-001' },
+	{ time: '16:10', type: 'evening', pointId: 'point-001' },
+	{ time: '16:40', type: 'morning', pointId: 'point-001' },
+	{ time: '18:20', type: 'evening', pointId: 'point-001' },
+	{ time: '19:30', type: 'morning', pointId: 'point-001' },
+	{ time: '22:00', type: 'evening', pointId: 'point-001' }
+]
+
+export const AUTO_CHECKIN_SLOTS = CHECKIN_SLOTS.filter((slot) => slot.type === 'morning')
+
 function getIdentity(session) {
 	const userName = session && session.userName ? session.userName : ''
 	const department = session && session.department ? session.department : ''
@@ -119,6 +134,20 @@ export function matchCheckinSlots(records, dateKey, slots) {
 	})
 }
 
+export function getCheckinSlotDate(date, slot) {
+	const value = new Date(date)
+	const clock = slot.time.split(':').map(Number)
+	return new Date(value.getFullYear(), value.getMonth(), value.getDate(), clock[0], clock[1])
+}
+
+export function isCheckinSlotMatched(records, date, slot) {
+	const dateKey = formatDateKey(date)
+	const scheduledTime = getCheckinSlotDate(date, slot).getTime()
+	return (Array.isArray(records) ? records : []).some((record) => {
+		return record && record.status === 'success' && record.dateKey === dateKey && record.pointId === slot.pointId && Number.isFinite(record.time) && Math.abs(record.time - scheduledTime) <= 10 * 60 * 1000
+	})
+}
+
 export function getMonthlyCheckinStatsFromRecords(records, date = new Date(), options = {}) {
 	const year = date.getFullYear()
 	const month = date.getMonth()
@@ -212,6 +241,7 @@ export function getTodayCheckinSummary(session) {
 		eveningStatusText: eveningRecord ? '已完成下班打卡' : '未打卡',
 		// 当前时间所处的打卡时段，用于驱动待打卡提示随时间变化
 		isMorningPhase: now.getHours() < MORNING_END_HOUR,
+		latestSuccessTime: successRecords[0] ? successRecords[0].displayTime : '',
 		latestTime: todayRecords[0] ? todayRecords[0].displayTime : '',
 		total: todayRecords.length
 	}

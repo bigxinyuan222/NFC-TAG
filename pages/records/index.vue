@@ -20,7 +20,6 @@
 			<view class="stats-card">
 				<view class="stats-head">
 					<text class="stats-title">{{ monthStats.monthText }}考勤统计{{ recordSource === 'remote' && !remoteComplete ? (isLoading ? ' · 加载中' : ' · 数据未全') : '' }}</text>
-					<text class="stats-side">9:00后迟到 · 18:00前早退</text>
 				</view>
 				<view class="stats-grid">
 					<view class="stat-cell">
@@ -58,7 +57,7 @@
 						</view>
 					</view>
 					<view class="schedule-result">
-						<text class="schedule-status" :class="{ 'schedule-checked': slotMatches[index] }">{{ slotMatches[index] ? '已打卡' : (isLoading || (recordSource === 'remote' && !remoteComplete) ? '待确认' : '未打卡') }}</text>
+						<text class="schedule-status" :class="{ 'schedule-checked': slotMatches[index], 'schedule-late': isSlotLate(index) }">{{ getSlotStatus(index) }}</text>
 						<text v-if="slotMatches[index]" class="schedule-actual-time">{{ slotMatches[index].displayTime }}</text>
 					</view>
 				</view>
@@ -71,7 +70,7 @@
 
 	<script>
 	import AppTabbar from '@/components/app-tabbar/index.vue'
-	import { getMonthlyCheckinStats, getMonthlyCheckinStatsFromRecords, getUserCheckinRecords, matchCheckinSlots, normalizeRemoteCheckinRecords } from '@/utils/checkin-record'
+	import { CHECKIN_SLOTS, getMonthlyCheckinStats, getMonthlyCheckinStatsFromRecords, getUserCheckinRecords, matchCheckinSlots, normalizeRemoteCheckinRecords } from '@/utils/checkin-record'
 	import { getMyCheckins } from '@/utils/checkin-api'
 	import { clearSession, getSession } from '@/utils/session'
 	import { getTheme } from '@/utils/theme'
@@ -109,18 +108,7 @@
 				selectedDateKey: '',
 				selectedDateText: '',
 				selectedWeekText: '',
-				checkinSlots: [
-					{ time: '08:00', type: 'morning' },
-					{ time: '09:40', type: 'evening' },
-					{ time: '10:10', type: 'morning' },
-					{ time: '11:50', type: 'evening' },
-					{ time: '14:30', type: 'morning' },
-					{ time: '16:10', type: 'evening' },
-					{ time: '16:40', type: 'morning' },
-					{ time: '18:20', type: 'evening' },
-					{ time: '19:30', type: 'morning' },
-					{ time: '22:00', type: 'evening' }
-				],
+				checkinSlots: CHECKIN_SLOTS,
 				slotMatches: [],
 				monthStats: {
 					attendDays: 0,
@@ -139,11 +127,15 @@
 				remoteComplete: false,
 				isLoading: false,
 				isRefreshing: false,
+				nowTime: Date.now(),
 				requestVersion: 0,
 				errorMessage: ''
 			}
 		},
 		onShow() {
+			this.nowTime = Date.now()
+			clearInterval(this.statusTimer)
+			this.statusTimer = setInterval(() => { this.nowTime = Date.now() }, 1000)
 			const { userName, department } = getSession()
 			this.userName = userName
 			this.department = department
@@ -158,7 +150,25 @@
 
 			this.loadRecords()
 		},
+		onHide() {
+			clearInterval(this.statusTimer)
+		},
+		onUnload() {
+			clearInterval(this.statusTimer)
+		},
 		methods: {
+			isSlotLate(index) {
+				if (!this.selectedDateKey || this.checkinSlots[index].type !== 'morning' || this.slotMatches[index]) return false
+				if (this.isLoading || (this.recordSource === 'remote' && !this.remoteComplete)) return false
+				const parts = this.selectedDateKey.split('-').map(Number)
+				const clock = this.checkinSlots[index].time.split(':').map(Number)
+				return this.nowTime > new Date(parts[0], parts[1] - 1, parts[2], clock[0], clock[1]).getTime()
+			},
+			getSlotStatus(index) {
+				if (this.slotMatches[index]) return '已打卡'
+				if (this.isLoading || (this.recordSource === 'remote' && !this.remoteComplete)) return '待确认'
+				return this.isSlotLate(index) ? '迟到' : '未打卡'
+			},
 			goLogin() {
 				uni.reLaunch({
 					url: '/pages/login/index'
@@ -284,7 +294,6 @@
 	}
 
 	.theme-dark .date-text,
-	.theme-dark .stats-side,
 	.theme-dark .stat-label,
 	.theme-dark .schedule-date,
 	.theme-dark .schedule-time,
@@ -310,6 +319,10 @@
 
 	.theme-dark .schedule-checked {
 		color: #7ea3ff;
+	}
+
+	.theme-dark .schedule-late {
+		color: #e8a45c;
 	}
 
 	.scroll {
@@ -377,11 +390,6 @@
 	.stats-head {
 		flex-wrap: wrap;
 		gap: 8rpx;
-	}
-
-	.stats-side {
-		color: #9aa3b3;
-		font-size: 21rpx;
 	}
 
 	.stats-grid {
@@ -532,6 +540,11 @@
 
 	.schedule-checked {
 		color: #2f6dff;
+		font-weight: 600;
+	}
+
+	.schedule-late {
+		color: #e08838;
 		font-weight: 600;
 	}
 
