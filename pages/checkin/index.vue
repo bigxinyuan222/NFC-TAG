@@ -41,30 +41,16 @@
 
 			<view class="card">
 				<view class="records-head">
-					<text class="records-title">今日记录</text>
+					<text class="records-title">最近打卡</text>
 					<text class="records-side" @tap="goRecords">查看全部</text>
 				</view>
 
 				<view class="record-row">
 					<view class="record-left">
-						<image class="record-icon" src="/static/icons/check-circle.svg" mode="aspectFit" />
-						<text class="record-label">上班打卡</text>
+						<image class="record-icon" :src="latestSuccessTime ? '/static/icons/check-circle.svg' : '/static/icons/clock.svg'" mode="aspectFit" />
+						<text class="record-label" :class="{ 'muted-text': !latestSuccessTime }">{{ latestSuccessTime ? '今日最近一次成功打卡' : '本机今日暂无成功打卡' }}</text>
 					</view>
-					<view class="record-right">
-						<text class="record-value" :class="{ 'muted-text': !morningChecked }">{{ morningText }}</text>
-						<text class="record-state" :class="morningChecked ? 'success' : 'muted-state'">{{ morningChecked ? '✓' : '−' }}</text>
-					</view>
-				</view>
-
-				<view class="record-row">
-					<view class="record-left">
-						<image class="record-icon" src="/static/icons/clock.svg" mode="aspectFit" />
-						<text class="record-label">下班打卡</text>
-					</view>
-					<view class="record-right">
-						<text class="record-value" :class="{ 'muted-text': !eveningChecked }">{{ eveningText }}</text>
-						<text class="record-state" :class="eveningChecked ? 'success' : 'muted-state'">{{ eveningChecked ? '✓' : '−' }}</text>
-					</view>
+					<text v-if="latestSuccessTime" class="record-value">{{ latestSuccessTime }}</text>
 				</view>
 			</view>
 		</view>
@@ -87,7 +73,8 @@
 	import CheckinResult from '@/components/checkin-result/index.vue'
 	import { clearPendingCheckinResult, clearSession, getPendingCheckinResult, getSession, getToken, setPendingCheckinResult } from '@/utils/session'
 	import { BASE_URL } from '@/utils/config'
-	import { getTodayCheckinSummary, saveCheckinRecord } from '@/utils/checkin-record'
+	import { AUTO_CHECKIN_SLOTS, getCheckinSlotDate, getTodayCheckinSummary, getUserCheckinRecords, isCheckinSlotMatched, normalizeRemoteCheckinRecords, saveCheckinRecord } from '@/utils/checkin-record'
+	import { getMyCheckins } from '@/utils/checkin-api'
 	import { getTheme } from '@/utils/theme'
 	import { formatClockTime, formatDateText } from '@/utils/time'
 
@@ -105,13 +92,13 @@
 				currentTheme: 'light',
 				timeText: '',
 				dateText: '',
+				summaryDateKey: '',
 				timer: null,
+				autoWindowKey: '',
+				pageVisible: false,
 				resultVisible: false,
 				isCheckingIn: false,
-				morningText: '未打卡',
-				eveningText: '未打卡',
-				morningChecked: false,
-				eveningChecked: false,
+				latestSuccessTime: '',
 				result: {
 					success: true,
 					message: '',
@@ -121,6 +108,7 @@
 			}
 		},
 		onShow() {
+			this.pageVisible = true
 			const { userName, department, avatarUrl } = getSession()
 			this.userName = userName
 			this.department = department
@@ -138,11 +126,16 @@
 			this.refreshTodaySummary()
 			this.startClock()
 			this.consumePendingResult()
+			this.checkAutoCheckin()
 		},
 		onHide() {
+			this.pageVisible = false
+			this.autoWindowKey = ''
 			this.stopClock()
 		},
 		onUnload() {
+			this.pageVisible = false
+			this.autoWindowKey = ''
 			this.stopClock()
 		},
 		methods: {
@@ -160,21 +153,21 @@
 				const now = new Date()
 				this.timeText = formatClockTime(now)
 				this.dateText = formatDateText(now)
+				if (this.summaryDateKey && this.summaryDateKey !== now.toDateString()) this.refreshTodaySummary()
 			},
 			refreshTodaySummary() {
 				const summary = getTodayCheckinSummary({
 					userName: this.userName,
 					department: this.department
 				})
-				this.morningText = summary.morningText
-				this.eveningText = summary.eveningText
-				this.morningChecked = summary.morningChecked
-				this.eveningChecked = summary.eveningChecked
+				this.latestSuccessTime = summary.latestSuccessTime
+				this.summaryDateKey = new Date().toDateString()
 			},
 			startClock() {
 				this.stopClock()
 				this.timer = setInterval(() => {
 					this.refreshClock()
+					this.checkAutoCheckin()
 				}, 1000)
 			},
 			stopClock() {
@@ -210,6 +203,66 @@
 					return
 				}
 
+				await this.submitCheckin(payload, true)
+				clearPendingCheckinResult()
+			},
+			async checkAutoCheckin() {
+				if (!this.pageVisible || this.isCheckingIn || !getToken()) return
+				const now = new Date()
+				const slot = AUTO_CHECKIN_SLOTS.find((item) => {
+					const scheduled = getCheckinSlotDate(now, item).getTime()
+					return now.getTime() >= scheduled - 10 * 60 * 1000 && now.getTime() < scheduled
+				})
+				if (!slot) return
+				const dateKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0')
+				const windowKey = dateKey + ' ' + slot.time
+				if (this.autoWindowKey === windowKey) return
+				this.autoWindowKey = windowKey
+
+				const session = { userName: this.userName, department: this.department }
+				const localRecords = getUserCheckinRecords(session)
+				if (isCheckinSlotMatched(localRecords, now, slot)) return
+
+				try {
+					const remoteRecords = await this.loadRemoteRecordsForAuto()
+					if (!this.pageVisible || isCheckinSlotMatched(remoteRecords, now, slot)) return
+					await this.submitCheckin({
+						success: false,
+						message: '正在自动打卡',
+						pointId: slot.pointId,
+						time: Date.now(),
+						source: 'auto',
+						slotTime: slot.time
+					}, false)
+				} catch (error) {
+					if (error && error.isAuthError) {
+						clearSession()
+						this.goLogin()
+						return
+					}
+					console.error('[自动打卡检查失败]', error)
+				}
+			},
+			async loadRemoteRecordsForAuto() {
+				const records = []
+				let page = 1
+				const pageSize = 100
+			while (true) {
+					const result = await getMyCheckins({ page, pageSize })
+					records.push.apply(records, normalizeRemoteCheckinRecords(result.items, {
+						userName: this.userName,
+						department: this.department
+					}))
+					const currentPage = Number(result.page) || page
+					const currentPageSize = Number(result.pageSize) || pageSize
+					const total = Number(result.total) || 0
+					if (total === 0 || currentPage * currentPageSize >= total) break
+					if (!result.items.length) throw new Error('签到记录分页不完整')
+					page = currentPage + 1
+				}
+				return records
+			},
+			async submitCheckin(payload, showResult) {
 				this.isCheckingIn = true
 				let success = false
 				let message = payload.message || '打卡失败'
@@ -291,12 +344,11 @@
 					message,
 					distanceMeters,
 					maxDistanceMeters,
-					source: 'api'
+					source: payload.source || 'api'
 				})
 				this.refreshTodaySummary()
 
-				this.resultVisible = true
-				clearPendingCheckinResult()
+				if (showResult) this.resultVisible = true
 				this.isCheckingIn = false
 			},
 				closeResult() {
@@ -431,8 +483,7 @@
 	.theme-dark .date-text,
 	.theme-dark .tip,
 	.theme-dark .records-side,
-	.theme-dark .muted-text,
-	.theme-dark .muted-state {
+	.theme-dark .muted-text {
 		color: #9ca3af;
 	}
 
@@ -545,7 +596,7 @@
 
 	.card {
 		margin-top: 100rpx;
-		padding: 22rpx 22rpx 12rpx;
+		padding: 22rpx 22rpx 28rpx;
 		border-radius: 30rpx;
 		background: rgba(255, 255, 255, 0.96);
 		box-shadow: 0 18rpx 50rpx rgba(31, 48, 95, 0.08);
@@ -554,8 +605,7 @@
 
 	.records-head,
 	.record-row,
-	.record-left,
-	.record-right {
+	.record-left {
 		display: flex;
 		align-items: center;
 	}
@@ -581,56 +631,31 @@
 		margin-top: 24rpx;
 	}
 
-	.record-row + .record-row {
-		margin-top: 24rpx;
-		padding-top: 24rpx;
-		border-top: 1rpx solid rgba(219, 226, 240, 0.8);
-	}
-
-	.record-left,
-	.record-right {
+	.record-left {
 		gap: 18rpx;
+		min-width: 0;
 	}
 
 	.record-icon {
 		width: 52rpx;
 		height: 52rpx;
+		flex-shrink: 0;
 	}
 
 	.record-label {
 		color: #2b3242;
-		font-size: 28rpx;
+		font-size: 25rpx;
 	}
 
 	.record-value {
 		color: #182033;
-		font-size: 28rpx;
+		font-size: 32rpx;
 		font-weight: 600;
+		flex-shrink: 0;
 	}
 
 	.muted-text {
 		color: #a0a8b8;
-	}
-
-	.record-state {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 40rpx;
-		height: 40rpx;
-		border-radius: 50%;
-		font-size: 28rpx;
-		font-weight: 700;
-	}
-
-	.success {
-		background: #2f6dff;
-		color: #ffffff;
-	}
-
-	.muted-state {
-		background: #c2c7d2;
-		color: #ffffff;
 	}
 
 	.records-side {
