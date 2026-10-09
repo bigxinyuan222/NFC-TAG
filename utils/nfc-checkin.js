@@ -70,6 +70,7 @@ function readCurrentTag() {
 function dispatchCurrentTag() {
 	const uid = readCurrentTag()
 	if (!uid || !currentHandler) return
+	console.log('[NFC UID]', uid)
 	const now = Date.now()
 	if (uid === lastScanKey && now - lastScanTime < SCAN_DEBOUNCE_MS) return
 	lastScanKey = uid
