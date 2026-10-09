@@ -2,27 +2,20 @@ import { formatClockTime } from './time'
 
 const STORAGE_KEY = 'checkinRecords'
 
-// 上/下班打卡归属分界：12 点前打卡计入上班卡，12 点及以后计入下班卡
-const MORNING_END_HOUR = 12
-
-// 月度考勤统计参考：09:00 后打上班卡计迟到，18:00 前打下班卡计早退
-const LATE_AFTER_HOUR = 9
-const EARLY_LEAVE_BEFORE_HOUR = 18
+const CHECKIN_WINDOW_MINUTES = 20
 
 export const CHECKIN_SLOTS = [
-	{ time: '08:00', type: 'morning', pointId: 'point-001' },
-	{ time: '09:40', type: 'evening', pointId: 'point-001' },
-	{ time: '10:10', type: 'morning', pointId: 'point-001' },
-	{ time: '11:50', type: 'evening', pointId: 'point-001' },
-	{ time: '14:30', type: 'morning', pointId: 'point-001' },
-	{ time: '16:10', type: 'evening', pointId: 'point-001' },
-	{ time: '16:40', type: 'morning', pointId: 'point-001' },
-	{ time: '18:20', type: 'evening', pointId: 'point-001' },
-	{ time: '19:30', type: 'morning', pointId: 'point-001' },
-	{ time: '22:00', type: 'evening', pointId: 'point-001' }
+	{ slotId: 'slot-0800', time: '08:00', type: 'morning', pointId: 'point-001' },
+	{ slotId: 'slot-0940', time: '09:40', type: 'evening', pointId: 'point-001' },
+	{ slotId: 'slot-1010', time: '10:10', type: 'morning', pointId: 'point-001' },
+	{ slotId: 'slot-1150', time: '11:50', type: 'evening', pointId: 'point-001' },
+	{ slotId: 'slot-1430', time: '14:30', type: 'morning', pointId: 'point-001' },
+	{ slotId: 'slot-1610', time: '16:10', type: 'evening', pointId: 'point-001' },
+	{ slotId: 'slot-1640', time: '16:40', type: 'morning', pointId: 'point-001' },
+	{ slotId: 'slot-1820', time: '18:20', type: 'evening', pointId: 'point-001' },
+	{ slotId: 'slot-1930', time: '19:30', type: 'morning', pointId: 'point-001' },
+	{ slotId: 'slot-2200', time: '22:00', type: 'evening', pointId: 'point-001' }
 ]
-
-export const AUTO_CHECKIN_SLOTS = CHECKIN_SLOTS.filter((slot) => slot.type === 'morning')
 
 function getIdentity(session) {
 	const userName = session && session.userName ? session.userName : ''
@@ -59,13 +52,54 @@ function getWeekText(date) {
 	return weekMap[date.getDay()]
 }
 
+function getSlotTime(date, slot) {
+	const value = new Date(date)
+	const clock = slot.time.split(':').map(Number)
+	return new Date(value.getFullYear(), value.getMonth(), value.getDate(), clock[0], clock[1]).getTime()
+}
+
+function getSlotWindow(slotDate, slot) {
+	const scheduledTime = getSlotTime(slotDate, slot)
+	return {
+		start: scheduledTime - CHECKIN_WINDOW_MINUTES * 60 * 1000,
+		end: scheduledTime
+	}
+}
+
+export function getCurrentCheckinSlot(date = new Date(), slots = CHECKIN_SLOTS) {
+	const time = new Date(date).getTime()
+	return slots.find((slot) => {
+		const window = getSlotWindow(date, slot)
+		return time >= window.start && time <= window.end
+	}) || null
+}
+
+function getSlotForRecordTime(date, slots = CHECKIN_SLOTS) {
+	return getCurrentCheckinSlot(date, slots)
+}
+
+function isRecordMatched(record, dateKey, slot) {
+	if (!record || record.status !== 'success' || record.dateKey !== dateKey || !Number.isFinite(record.time)) return false
+	if (record.pointId && record.pointId !== slot.pointId) return false
+	if (record.slotId) return record.slotId === slot.slotId
+	const window = getSlotWindow(new Date(record.time), slot)
+	const scheduledTime = getSlotTime(new Date(record.time), slot)
+	return record.type === slot.type && record.time >= window.start && record.time <= scheduledTime
+}
+
 function sortByTimeDesc(records) {
 	return records.sort((left, right) => right.time - left.time)
 }
 
 export function getUserCheckinRecords(session) {
 	const { identityKey } = getIdentity(session)
-	return sortByTimeDesc(getAllRecords().filter((record) => record.identityKey === identityKey))
+	return sortByTimeDesc(getAllRecords()
+		.filter((record) => record.identityKey === identityKey)
+		.map((record) => {
+			if (record.slotId || !Number.isFinite(record.time)) return record
+			const slot = getSlotForRecordTime(new Date(record.time))
+			return slot ? { ...record, slotId: slot.slotId, type: slot.type } : record
+		}))
 }
 
 function parseRecordTime(value) {
@@ -77,31 +111,28 @@ function parseRecordTime(value) {
 
 export function normalizeRemoteCheckinRecord(item, session) {
 	const date = parseRecordTime(item && item.createdAt)
-		const time = date.getTime()
-		if (!Number.isFinite(time)) {
-			return null
-		}
-		const userName = session && session.userName ? session.userName : ''
-		const department = session && session.department ? session.department : ''
-		return {
-			id: String(item.id),
-			identityKey: userName + '::' + department,
-			userName,
-			department,
-			time,
-			dateKey: formatDateKey(date),
-			displayDate: formatDisplayDate(date),
-			weekText: getWeekText(date),
-			displayTime: formatClockTime(date),
-			type: date.getHours() < MORNING_END_HOUR ? 'morning' : 'evening',
-			status: 'success',
-			pointId: item.pointId || '',
-			longitude: item.longitude,
-			latitude: item.latitude,
-			distanceMeters: item.distanceMeters,
-			message: '',
-			source: 'remote'
-		}
+	const time = date.getTime()
+	if (!Number.isFinite(time)) return null
+	const userName = session && session.userName ? session.userName : ''
+	const department = session && session.department ? session.department : ''
+	const slot = getSlotForRecordTime(date)
+	return {
+		id: String(item.id),
+		identityKey: userName + '::' + department,
+		userName,
+		department,
+		time,
+		dateKey: formatDateKey(date),
+		displayDate: formatDisplayDate(date),
+		weekText: getWeekText(date),
+		displayTime: formatClockTime(date),
+		slotId: slot ? slot.slotId : '',
+		type: slot ? slot.type : '',
+		status: 'success',
+		pointId: item.pointId || '',
+		message: '',
+		source: 'remote'
+	}
 }
 
 export function normalizeRemoteCheckinRecords(items, session) {
@@ -115,16 +146,12 @@ export function normalizeRemoteCheckinRecords(items, session) {
 }
 
 export function matchCheckinSlots(records, dateKey, slots) {
-	const parts = dateKey.split('-').map(Number)
 	return slots.map((slot) => {
-		const clock = slot.time.split(':').map(Number)
-		const scheduledTime = new Date(parts[0], parts[1] - 1, parts[2], clock[0], clock[1]).getTime()
 		let match = null
 		let closest = Infinity
 		;(Array.isArray(records) ? records : []).forEach((record) => {
-			if (!record || record.status !== 'success' || record.dateKey !== dateKey || !Number.isFinite(record.time)) return
-			const difference = Math.abs(record.time - scheduledTime)
-			if (difference > 10 * 60 * 1000) return
+			if (!isRecordMatched(record, dateKey, slot)) return
+			const difference = Math.abs(record.time - getSlotTime(new Date(record.time), slot))
 			if (difference < closest || (difference === closest && (record.time < match.time || (record.time === match.time && String(record.id) < String(match.id))))) {
 				match = record
 				closest = difference
@@ -134,21 +161,17 @@ export function matchCheckinSlots(records, dateKey, slots) {
 	})
 }
 
-export function getCheckinSlotDate(date, slot) {
-	const value = new Date(date)
-	const clock = slot.time.split(':').map(Number)
-	return new Date(value.getFullYear(), value.getMonth(), value.getDate(), clock[0], clock[1])
-}
-
 export function isCheckinSlotMatched(records, date, slot) {
 	const dateKey = formatDateKey(date)
-	const scheduledTime = getCheckinSlotDate(date, slot).getTime()
-	return (Array.isArray(records) ? records : []).some((record) => {
-		return record && record.status === 'success' && record.dateKey === dateKey && record.pointId === slot.pointId && Number.isFinite(record.time) && Math.abs(record.time - scheduledTime) <= 10 * 60 * 1000
-	})
+	return (Array.isArray(records) ? records : []).some((record) => isRecordMatched(record, dateKey, slot))
 }
 
-export function getMonthlyCheckinStatsFromRecords(records, date = new Date(), options = {}) {
+function getScheduledTimeForRecord(record) {
+	const slot = CHECKIN_SLOTS.find((item) => item.slotId === record.slotId)
+	return slot ? getSlotTime(new Date(record.time), slot) : null
+}
+
+function buildMonthlyCheckinStats(records, date = new Date(), options = {}) {
 	const year = date.getFullYear()
 	const month = date.getMonth()
 	const monthPrefix = year + '-' + String(month + 1).padStart(2, '0') + '-'
@@ -157,32 +180,35 @@ export function getMonthlyCheckinStatsFromRecords(records, date = new Date(), op
 	;(Array.isArray(records) ? records : [])
 		.filter((record) => record.status === 'success' && record.dateKey.indexOf(monthPrefix) === 0)
 		.forEach((record) => {
-			if (!dayMap[record.dateKey]) dayMap[record.dateKey] = { morning: null, evening: null }
-			const slot = dayMap[record.dateKey]
-			if (record.type === 'morning' && (!slot.morning || record.time < slot.morning.time)) slot.morning = record
-			if (record.type === 'evening' && (!slot.evening || record.time > slot.evening.time)) slot.evening = record
+			if (!dayMap[record.dateKey]) dayMap[record.dateKey] = { morning: false, evening: false }
+			if (record.type === 'morning') dayMap[record.dateKey].morning = true
+			if (record.type === 'evening') dayMap[record.dateKey].evening = true
 		})
 
 	let attendDays = 0
 	let lateCount = 0
 	let earlyLeaveCount = 0
 	let missCount = 0
+	;(Array.isArray(records) ? records : [])
+		.filter((record) => record.status === 'success' && record.dateKey.indexOf(monthPrefix) === 0)
+		.forEach((record) => {
+			const scheduledTime = getScheduledTimeForRecord(record)
+			if (!scheduledTime) return
+			if (record.type === 'morning' && record.time > scheduledTime) lateCount++
+			if (record.type === 'evening' && record.time < scheduledTime) earlyLeaveCount++
+		})
 	Object.keys(dayMap).forEach((key) => {
 		const slot = dayMap[key]
 		if (!slot.morning && !slot.evening) return
 		attendDays++
-		if (slot.morning) {
-			const value = new Date(slot.morning.time)
-			if (value.getHours() * 60 + value.getMinutes() > LATE_AFTER_HOUR * 60) lateCount++
-		}
-		if (slot.evening) {
-			const value = new Date(slot.evening.time)
-			if (value.getHours() * 60 + value.getMinutes() < EARLY_LEAVE_BEFORE_HOUR * 60) earlyLeaveCount++
-		}
 		if (options.canCalculateMissing && key < todayKey && ((slot.morning && !slot.evening) || (!slot.morning && slot.evening))) missCount++
 	})
 
 	return { attendDays, lateCount, earlyLeaveCount, missCount, monthText: (month + 1) + '月' }
+}
+
+export function getMonthlyCheckinStatsFromRecords(records, date = new Date(), options = {}) {
+	return buildMonthlyCheckinStats(records, date, options)
 }
 
 export function saveCheckinRecord(session, payload) {
@@ -193,8 +219,6 @@ export function saveCheckinRecord(session, payload) {
 	const sameDayRecords = getUserCheckinRecords(session)
 		.filter((record) => record.dateKey === dateKey)
 		.sort((left, right) => left.time - right.time)
-	// 按打卡时刻判定归属，避免下午打的卡被记成"上班打卡"的不合理显示
-	const type = date.getHours() < MORNING_END_HOUR ? 'morning' : 'evening'
 	const nextRecord = {
 		id: String(time) + '-' + String(sameDayRecords.length + 1),
 		identityKey,
@@ -205,8 +229,9 @@ export function saveCheckinRecord(session, payload) {
 		displayDate: formatDisplayDate(date),
 		weekText: getWeekText(date),
 		displayTime: formatClockTime(date),
-		type,
-		status: payload.success === false ? 'fail' : 'success',
+		slotId: payload.slotId || '',
+		type: payload.type || '',
+		status: 'success',
 		pointId: payload.pointId || '',
 		message: payload.message || '',
 		source: payload.source || 'mock'
@@ -239,8 +264,6 @@ export function getTodayCheckinSummary(session) {
 		eveningTime: eveningRecord ? eveningRecord.displayTime : '',
 		morningStatusText: morningRecord ? '已完成上班打卡' : '未打卡',
 		eveningStatusText: eveningRecord ? '已完成下班打卡' : '未打卡',
-		// 当前时间所处的打卡时段，用于驱动待打卡提示随时间变化
-		isMorningPhase: now.getHours() < MORNING_END_HOUR,
 		latestSuccessTime: successRecords[0] ? successRecords[0].displayTime : '',
 		latestTime: todayRecords[0] ? todayRecords[0].displayTime : '',
 		total: todayRecords.length
@@ -248,72 +271,5 @@ export function getTodayCheckinSummary(session) {
 }
 
 export function getMonthlyCheckinStats(session, date = new Date()) {
-	const year = date.getFullYear()
-	const month = date.getMonth()
-	const monthPrefix = year + '-' + String(month + 1).padStart(2, '0') + '-'
-	const todayKey = formatDateKey(new Date())
-
-	// 当月成功打卡记录按天分组：上班卡取最早一次，下班卡取最晚一次
-	const dayMap = {}
-	getUserCheckinRecords(session)
-		.filter((record) => record.status === 'success' && record.dateKey.indexOf(monthPrefix) === 0)
-		.forEach((record) => {
-			if (!dayMap[record.dateKey]) {
-				dayMap[record.dateKey] = { morning: null, evening: null }
-			}
-			const slot = dayMap[record.dateKey]
-			if (record.type === 'morning') {
-				if (!slot.morning || record.time < slot.morning.time) {
-					slot.morning = record
-				}
-			} else {
-				if (!slot.evening || record.time > slot.evening.time) {
-					slot.evening = record
-				}
-			}
-		})
-
-	let attendDays = 0
-	let lateCount = 0
-	let earlyLeaveCount = 0
-	let missCount = 0
-
-	Object.keys(dayMap).forEach((key) => {
-		const { morning, evening } = dayMap[key]
-		if (!morning && !evening) {
-			return
-		}
-		// 有任一成功打卡即计为出勤
-		attendDays++
-		if (morning) {
-			const morningDate = new Date(morning.time)
-			if (morningDate.getHours() * 60 + morningDate.getMinutes() > LATE_AFTER_HOUR * 60) {
-				lateCount++
-			}
-		}
-		if (evening) {
-			const eveningDate = new Date(evening.time)
-			if (eveningDate.getHours() * 60 + eveningDate.getMinutes() < EARLY_LEAVE_BEFORE_HOUR * 60) {
-				earlyLeaveCount++
-			}
-		}
-		// 缺卡：仅统计已过去的日期（当天状态未定，不参与）
-		if (key < todayKey && ((morning && !evening) || (!morning && evening))) {
-			missCount++
-		}
-	})
-
-	return {
-		attendDays,
-		lateCount,
-		earlyLeaveCount,
-		missCount,
-		monthText: (month + 1) + '月'
-	}
-}
-
-export function clearUserCheckinRecords(session) {
-	const { identityKey } = getIdentity(session)
-	const records = getAllRecords().filter((record) => record.identityKey !== identityKey)
-	saveAllRecords(records)
+	return buildMonthlyCheckinStats(getUserCheckinRecords(session), date, { canCalculateMissing: true })
 }

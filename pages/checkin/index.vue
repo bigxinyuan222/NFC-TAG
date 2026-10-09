@@ -25,17 +25,17 @@
 				<view class="pulse-wrap">
 					<view class="pulse-ring pulse-ring-outer"></view>
 					<view class="pulse-ring pulse-ring-inner"></view>
-					<view class="pulse-core" @click="handleCheckin">
+					<view class="pulse-core">
 						<view class="pulse-icon">
 							<image class="pulse-wave" src="/static/icons/checkin-wave.svg" mode="aspectFit" />
 						</view>
-						<text class="pulse-label">碰一下打卡</text>
+					<text class="pulse-label">{{ requiresNfcRescan ? '请再次碰卡验证' : '碰一下打卡' }}</text>
 					</view>
 				</view>
 
 				<view class="tip-row">
 					<text class="tip-dot"></text>
-					<text class="tip">请靠近打卡设备</text>
+					<text class="tip">{{ requiresNfcRescan ? '已打开应用，请再次靠近打卡卡片' : '请靠近打卡设备' }}</text>
 				</view>
 			</view>
 
@@ -48,7 +48,7 @@
 				<view class="record-row">
 					<view class="record-left">
 						<image class="record-icon" :src="latestSuccessTime ? '/static/icons/check-circle.svg' : '/static/icons/clock.svg'" mode="aspectFit" />
-						<text class="record-label" :class="{ 'muted-text': !latestSuccessTime }">{{ latestSuccessTime ? '今日最近一次成功打卡' : '本机今日暂无成功打卡' }}</text>
+						<text class="record-label" :class="{ 'muted-text': !latestSuccessTime }">最近一次打卡时间</text>
 					</view>
 					<text v-if="latestSuccessTime" class="record-value">{{ latestSuccessTime }}</text>
 				</view>
@@ -71,10 +71,11 @@
 <script>
 	import AppTabbar from '@/components/app-tabbar/index.vue'
 	import CheckinResult from '@/components/checkin-result/index.vue'
-	import { clearPendingCheckinResult, clearSession, getPendingCheckinResult, getSession, getToken, setPendingCheckinResult } from '@/utils/session'
-	import { BASE_URL } from '@/utils/config'
-	import { AUTO_CHECKIN_SLOTS, getCheckinSlotDate, getTodayCheckinSummary, getUserCheckinRecords, isCheckinSlotMatched, normalizeRemoteCheckinRecords, saveCheckinRecord } from '@/utils/checkin-record'
-	import { getMyCheckins } from '@/utils/checkin-api'
+	import { clearSession, consumeNfcRescanRequired, consumePendingNfcTag, getSession, hasSession } from '@/utils/session'
+	import { CHECKIN_SLOTS, getCurrentCheckinSlot, getTodayCheckinSummary, getUserCheckinRecords, isCheckinSlotMatched, saveCheckinRecord } from '@/utils/checkin-record'
+	import { submitCheckin as submitCheckinRequest } from '@/api/checkin'
+	import { NFC_CHECKIN_POINT_ID, isAuthorizedNfcUid } from '@/utils/nfc-config'
+	import { releaseNfcSubmissionLock } from '@/utils/nfc-checkin'
 	import { getTheme } from '@/utils/theme'
 	import { formatClockTime, formatDateText } from '@/utils/time'
 
@@ -94,8 +95,8 @@
 				dateText: '',
 				summaryDateKey: '',
 				timer: null,
-				autoWindowKey: '',
 				pageVisible: false,
+				requiresNfcRescan: false,
 				resultVisible: false,
 				isCheckingIn: false,
 				latestSuccessTime: '',
@@ -116,7 +117,7 @@
 				this.avatarLoadFailed = false
 			this.currentTheme = getTheme()
 
-			if (!this.userName || !this.department) {
+			if (!hasSession()) {
 				clearSession()
 				this.goLogin()
 				return
@@ -125,17 +126,23 @@
 			this.refreshClock()
 			this.refreshTodaySummary()
 			this.startClock()
-			this.consumePendingResult()
-			this.checkAutoCheckin()
+			this.requiresNfcRescan = consumeNfcRescanRequired()
+			const pendingNfcTag = consumePendingNfcTag()
+			if (pendingNfcTag) this.handleNfcTag(pendingNfcTag)
+			if (this.requiresNfcRescan) {
+				setTimeout(() => {
+					if (this.pageVisible && this.requiresNfcRescan) {
+						uni.showToast({ title: '请再次碰卡验证', icon: 'none' })
+					}
+				}, 350)
+			}
 		},
 		onHide() {
 			this.pageVisible = false
-			this.autoWindowKey = ''
 			this.stopClock()
 		},
 		onUnload() {
 			this.pageVisible = false
-			this.autoWindowKey = ''
 			this.stopClock()
 		},
 		methods: {
@@ -167,7 +174,6 @@
 				this.stopClock()
 				this.timer = setInterval(() => {
 					this.refreshClock()
-					this.checkAutoCheckin()
 				}, 1000)
 			},
 			stopClock() {
@@ -178,145 +184,88 @@
 			},
 			logout() {
 				clearSession()
-				clearPendingCheckinResult()
 				this.goLogin()
 			},
-			handleCheckin() {
+			handleNfcTag(tag) {
 				if (this.isCheckingIn) {
+					releaseNfcSubmissionLock()
 					return
 				}
-
-				const payload = {
-					success: false,
-					message: '正在获取位置并提交打卡',
-					pointId: 'point-001',
-					time: Date.now()
-				}
-
-				setPendingCheckinResult(payload)
-				this.consumePendingResult()
-			},
-			async consumePendingResult() {
-				const payload = getPendingCheckinResult()
-
-				if (!payload || this.isCheckingIn) {
+				this.requiresNfcRescan = false
+				if (!isAuthorizedNfcUid(tag && tag.uid)) {
+					uni.showToast({ title: '非授权打卡卡片', icon: 'none' })
+					releaseNfcSubmissionLock()
 					return
 				}
-
-				await this.submitCheckin(payload, true)
-				clearPendingCheckinResult()
-			},
-			async checkAutoCheckin() {
-				if (!this.pageVisible || this.isCheckingIn || !getToken()) return
 				const now = new Date()
-				const slot = AUTO_CHECKIN_SLOTS.find((item) => {
-					const scheduled = getCheckinSlotDate(now, item).getTime()
-					return now.getTime() >= scheduled - 10 * 60 * 1000 && now.getTime() < scheduled
-				})
-				if (!slot) return
-				const dateKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0')
-				const windowKey = dateKey + ' ' + slot.time
-				if (this.autoWindowKey === windowKey) return
-				this.autoWindowKey = windowKey
-
+				const slot = getCurrentCheckinSlot(now)
+				if (!slot) {
+					uni.showToast({ title: '当前不在打卡时间内', icon: 'none' })
+					releaseNfcSubmissionLock()
+					return
+				}
 				const session = { userName: this.userName, department: this.department }
-				const localRecords = getUserCheckinRecords(session)
-				if (isCheckinSlotMatched(localRecords, now, slot)) return
-
-				try {
-					const remoteRecords = await this.loadRemoteRecordsForAuto()
-					if (!this.pageVisible || isCheckinSlotMatched(remoteRecords, now, slot)) return
-					await this.submitCheckin({
-						success: false,
-						message: '正在自动打卡',
-						pointId: slot.pointId,
-						time: Date.now(),
-						source: 'auto',
-						slotTime: slot.time
-					}, false)
-				} catch (error) {
-					if (error && error.isAuthError) {
-						clearSession()
-						this.goLogin()
-						return
-					}
-					console.error('[自动打卡检查失败]', error)
+				if (isCheckinSlotMatched(getUserCheckinRecords(session), now, slot)) {
+					uni.showToast({ title: '当前班次已打卡', icon: 'none' })
+					releaseNfcSubmissionLock()
+					return
 				}
-			},
-			async loadRemoteRecordsForAuto() {
-				const records = []
-				let page = 1
-				const pageSize = 100
-			while (true) {
-					const result = await getMyCheckins({ page, pageSize })
-					records.push.apply(records, normalizeRemoteCheckinRecords(result.items, {
-						userName: this.userName,
-						department: this.department
-					}))
-					const currentPage = Number(result.page) || page
-					const currentPageSize = Number(result.pageSize) || pageSize
-					const total = Number(result.total) || 0
-					if (total === 0 || currentPage * currentPageSize >= total) break
-					if (!result.items.length) throw new Error('签到记录分页不完整')
-					page = currentPage + 1
-				}
-				return records
+				this.submitCheckin({
+					message: '正在提交打卡',
+					pointId: NFC_CHECKIN_POINT_ID,
+					slotId: slot.slotId,
+					type: slot.type,
+					time: now.getTime(),
+					source: 'nfc'
+				}, true).finally(releaseNfcSubmissionLock)
 			},
 			async submitCheckin(payload, showResult) {
+				const slot = payload.slotId
+					? CHECKIN_SLOTS.find((item) => item.slotId === payload.slotId)
+					: getCurrentCheckinSlot(new Date())
 				this.isCheckingIn = true
 				let success = false
 				let message = payload.message || '打卡失败'
-				let distanceMeters = null
-				let maxDistanceMeters = null
+				const checkinTime = payload.time || Date.now()
+
+				if (!slot) {
+					this.result = {
+						success: false,
+						message: '当前不在打卡时间内',
+						pointId: payload.pointId || '',
+						timeText: formatClockTime(new Date(checkinTime))
+					}
+					this.isCheckingIn = false
+					if (showResult) this.resultVisible = true
+					return { success: false, slot: null }
+				}
 
 				try {
-					const token = getToken()
-					if (!token) {
-						throw new Error('登录状态已失效，请重新登录')
-					}
 					if (!payload.pointId) {
 						throw new Error('未识别到有效的打卡点')
 					}
 
-					const loc = await uni.getLocation({ type: 'wgs84' })
-					const res = await uni.request({
-						url: BASE_URL + '/api/checkin',
-						method: 'POST',
-						header: {
-							'Authorization': 'Bearer ' + token,
-							'Content-Type': 'application/json'
-						},
-						data: {
-							pointId: payload.pointId,
-							longitude: loc.longitude,
-							latitude: loc.latitude
-						}
+					const result = await submitCheckinRequest({
+						pointId: payload.pointId
 					})
-					const body = res.data && typeof res.data === 'object' ? res.data : {}
-					if (res.statusCode === 200 && body.code === 0) {
+					const body = result.body || {}
+					if (result.success) {
 						success = true
-						message = body.msg || '打卡成功'
-						distanceMeters = body.data && body.data.distanceMeters
-						maxDistanceMeters = body.data && body.data.maxDistanceMeters
+						message = result.message
 						console.log('[打卡成功]', {
 							pointId: payload.pointId,
-							longitude: loc.longitude,
-							latitude: loc.latitude,
 							response: body
 						})
 					} else {
-						message = body.msg || '打卡失败'
+						message = result.message
 						console.error('[打卡接口响应失败]', {
-							url: BASE_URL + '/api/checkin',
-							statusCode: res.statusCode,
-							response: res.data,
-							pointId: payload.pointId,
-							longitude: loc.longitude,
-							latitude: loc.latitude
+							statusCode: result.statusCode,
+							response: body,
+							pointId: payload.pointId
 						})
 					}
 				} catch (e) {
-					message = e && (e.message || e.errMsg) ? (e.message || e.errMsg) : '定位或网络失败'
+					message = e && (e.message || e.errMsg) ? (e.message || e.errMsg) : '网络失败'
 					console.error('[打卡失败原因]', message)
 					console.error('[打卡失败]', {
 						pointId: payload.pointId || '',
@@ -324,7 +273,7 @@
 					})
 				}
 
-				const date = new Date(payload.time || Date.now())
+				const date = new Date(checkinTime)
 				const displayTime = formatClockTime(date)
 
 				this.result = {
@@ -334,22 +283,25 @@
 					timeText: displayTime
 				}
 
-				saveCheckinRecord({
-					userName: this.userName,
-					department: this.department
-				}, {
-					pointId: payload.pointId || '',
-					time: payload.time || Date.now(),
-					success,
-					message,
-					distanceMeters,
-					maxDistanceMeters,
-					source: payload.source || 'api'
-				})
-				this.refreshTodaySummary()
+				if (success) {
+					const session = {
+						userName: this.userName,
+						department: this.department
+					}
+					saveCheckinRecord(session, {
+						pointId: payload.pointId || slot.pointId,
+						slotId: slot.slotId,
+						type: slot.type,
+						time: checkinTime,
+						message,
+						source: payload.source || 'api'
+					})
+					this.refreshTodaySummary()
+				}
 
 				if (showResult) this.resultVisible = true
 				this.isCheckingIn = false
+				return { success, slot }
 			},
 				closeResult() {
 					this.resultVisible = false

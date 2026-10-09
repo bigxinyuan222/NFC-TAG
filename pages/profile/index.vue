@@ -36,7 +36,7 @@
 
 <script>
 	import AppTabbar from '@/components/app-tabbar/index.vue'
-	import { clearPendingCheckinResult, clearSession, getSession } from '@/utils/session'
+	import { clearSession, getSession } from '@/utils/session'
 	import { getTheme } from '@/utils/theme'
 
 	export default {

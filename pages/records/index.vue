@@ -50,14 +50,14 @@
 				</view>
 				<view v-for="(slot, index) in checkinSlots" :key="slot.time" class="schedule-row" :class="{ 'schedule-pair-start': index > 0 && index % 2 === 0 }">
 					<view class="schedule-left">
-						<image class="schedule-icon" :src="slot.type === 'morning' ? '/static/icons/check-circle.svg' : '/static/icons/clock.svg'" mode="aspectFit" />
+						<image class="schedule-icon" :src="getSlotIcon(index)" mode="aspectFit" />
 						<view class="schedule-info">
 							<text class="schedule-name">{{ slot.type === 'morning' ? '上班打卡' : '下班打卡' }}</text>
 							<text class="schedule-time">{{ slot.time }}</text>
 						</view>
 					</view>
 					<view class="schedule-result">
-						<text class="schedule-status" :class="{ 'schedule-checked': slotMatches[index], 'schedule-late': isSlotLate(index) }">{{ getSlotStatus(index) }}</text>
+						<text class="schedule-status" :class="{ 'schedule-checked': slotMatches[index] }">{{ getSlotStatus(index) }}</text>
 						<text v-if="slotMatches[index]" class="schedule-actual-time">{{ slotMatches[index].displayTime }}</text>
 					</view>
 				</view>
@@ -71,7 +71,7 @@
 	<script>
 	import AppTabbar from '@/components/app-tabbar/index.vue'
 	import { CHECKIN_SLOTS, getMonthlyCheckinStats, getMonthlyCheckinStatsFromRecords, getUserCheckinRecords, matchCheckinSlots, normalizeRemoteCheckinRecords } from '@/utils/checkin-record'
-	import { getMyCheckins } from '@/utils/checkin-api'
+	import { getMyCheckins } from '@/api/checkin'
 	import { clearSession, getSession } from '@/utils/session'
 	import { getTheme } from '@/utils/theme'
 
@@ -122,7 +122,6 @@
 				remoteRecords: [],
 				remotePage: 0,
 				remotePageSize: 100,
-				remoteTotal: 0,
 				remoteHasMore: true,
 				remoteComplete: false,
 				isLoading: false,
@@ -157,17 +156,19 @@
 			clearInterval(this.statusTimer)
 		},
 		methods: {
-			isSlotLate(index) {
-				if (!this.selectedDateKey || this.checkinSlots[index].type !== 'morning' || this.slotMatches[index]) return false
-				if (this.isLoading || (this.recordSource === 'remote' && !this.remoteComplete)) return false
+			getSlotIcon(index) {
+				return this.slotMatches[index] ? '/static/icons/check-circle.svg' : '/static/icons/clock.svg'
+			},
+			isSlotPending(index) {
+				if (!this.selectedDateKey) return false
 				const parts = this.selectedDateKey.split('-').map(Number)
 				const clock = this.checkinSlots[index].time.split(':').map(Number)
-				return this.nowTime > new Date(parts[0], parts[1] - 1, parts[2], clock[0], clock[1]).getTime()
+				return this.nowTime <= new Date(parts[0], parts[1] - 1, parts[2], clock[0], clock[1]).getTime()
 			},
 			getSlotStatus(index) {
 				if (this.slotMatches[index]) return '已打卡'
 				if (this.isLoading || (this.recordSource === 'remote' && !this.remoteComplete)) return '待确认'
-				return this.isSlotLate(index) ? '迟到' : '未打卡'
+				return this.isSlotPending(index) ? '待打卡' : '未打卡'
 			},
 			goLogin() {
 				uni.reLaunch({
@@ -179,7 +180,6 @@
 				if (!this.selectedDateKey) this.selectedDateKey = formatDateKey(new Date())
 				this.remoteRecords = []
 				this.remotePage = 0
-				this.remoteTotal = 0
 				this.remoteHasMore = true
 				this.remoteComplete = false
 				this.recordSource = 'remote'
@@ -205,7 +205,6 @@
 						records.forEach((item) => { recordMap[item.id] = item })
 						this.remoteRecords = Object.keys(recordMap).map((key) => recordMap[key]).sort((left, right) => right.time - left.time)
 						this.remotePage = page
-						this.remoteTotal = result.total
 						this.remoteHasMore = result.items.length > 0 && page * result.pageSize < result.total
 						this.remoteComplete = !this.remoteHasMore && (result.total === 0 || page * result.pageSize >= result.total)
 						this.recordList = this.remoteRecords

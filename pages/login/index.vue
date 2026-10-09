@@ -66,7 +66,7 @@
 
 <script>
 	import { getSession, hasSession, saveSession } from '@/utils/session'
-	import { registerAccount, loginAccount } from '@/utils/auth-api'
+	import { registerAccount, loginAccount } from '@/api/auth'
 	import { getTheme } from '@/utils/theme'
 
 	export default {

@@ -55,3 +55,43 @@ export function getMyCheckins({ page = 1, pageSize = 20 } = {}) {
 		})
 	})
 }
+
+export function submitCheckin({ pointId }) {
+	const token = getToken()
+	return new Promise((resolve, reject) => {
+		if (!token) {
+			const error = new Error('登录状态已失效，请重新登录')
+			error.isAuthError = true
+			reject(error)
+			return
+		}
+
+		uni.request({
+			url: BASE_URL + '/api/checkin',
+			method: 'POST',
+			header: {
+				Authorization: 'Bearer ' + token,
+				'Content-Type': 'application/json'
+			},
+			data: {
+				pointId
+			},
+			success: (response) => {
+				const body = response.data && typeof response.data === 'object' ? response.data : {}
+				const success = response.statusCode === 200 && body.code === 0
+				resolve({
+					success,
+					message: success ? (body.msg || '打卡成功') : (body.msg || '打卡失败'),
+					statusCode: response.statusCode,
+					body
+				})
+			},
+			fail: (error) => {
+				const requestError = new Error(error && error.errMsg ? error.errMsg : '网络请求失败')
+				requestError.isNetworkError = true
+				requestError.originalError = error
+				reject(requestError)
+			}
+		})
+	})
+}
