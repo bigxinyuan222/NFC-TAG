@@ -99,7 +99,7 @@ export function startNfcScan(handler) {
 	currentHandler = handler
 	currentAdapter = state.adapter
 	currentActivity = state.activity
-	document.addEventListener('newintent', handleNewIntent, false)
+	plus.globalEvent.addEventListener('newintent', handleNewIntent)
 	setTimeout(dispatchCurrentTag, 100)
 	return { supported: true }
 	// #endif
@@ -108,7 +108,7 @@ export function startNfcScan(handler) {
 
 export function stopNfcScan() {
 	// #ifdef APP-PLUS
-	document.removeEventListener('newintent', handleNewIntent, false)
+	plus.globalEvent.removeEventListener('newintent', handleNewIntent)
 	if (currentAdapter && currentActivity) {
 		try {
 			currentAdapter.disableForegroundDispatch(currentActivity)

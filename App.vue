@@ -17,7 +17,6 @@ const URI_DEBOUNCE_MS = 1000
 			// #endif
 		},
 		onShow() {
-			if (!hasSession()) return
 			const state = startNfcScan((tag) => this.handleNfcTag(tag))
 			if (state && state.error) console.warn('[NFC 不可用]', state.error)
 		},
@@ -27,9 +26,14 @@ const URI_DEBOUNCE_MS = 1000
 
 		methods: {
 			handleNfcTag(tag) {
-				if (!hasSession()) return
 				if (!isAuthorizedNfcUid(tag && tag.uid)) {
 					uni.showToast({ title: '非授权打卡卡片', icon: 'none' })
+					return
+				}
+				if (!hasSession()) {
+					uni.reLaunch({
+						url: '/pages/login/index'
+					})
 					return
 				}
 				if (!acquireNfcSubmissionLock()) {
