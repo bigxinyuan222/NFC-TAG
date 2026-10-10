@@ -10,14 +10,24 @@ const URI_DEBOUNCE_MS = 1000
 	export default {
 		onLaunch() {
 			// #ifdef APP-PLUS
+			// 版本校验标记：重新打包后启动必弹，看到它即证明跑的是新代码
+			setTimeout(() => {
+				uni.showModal({
+					title: '版本校验',
+					content: '当前构建标记: NFC-BUILD-1010-C',
+					showCancel: false
+				})
+			}, 1500)
 			this.handle(plus.runtime.arguments)
 			document.addEventListener('newintent', () => {
+				uni.showToast({ title: 'App newintent: ' + plus.runtime.arguments, icon: 'none', duration: 4000 })
 				this.handle(plus.runtime.arguments)
 			})
 			// #endif
 		},
 		onShow() {
 			if (!hasSession()) return
+			console.log('[App onShow] 启动 NFC 扫描')
 			const state = startNfcScan((tag) => this.handleNfcTag(tag))
 			if (state && state.error) console.warn('[NFC 不可用]', state.error)
 		},
