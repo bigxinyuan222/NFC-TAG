@@ -1,15 +1,2 @@
+// 打卡点 ID：与后端打卡接口 body 的 pointId 对应。卡片 uid 白名单已改由后端校验。
 export const NFC_CHECKIN_POINT_ID = 'point-001'
-
-// Replace this test UID with the hexadecimal UID read from the authorized NFC card.
-export const NFC_UID_ALLOWLIST = Object.freeze([
-	'5316C716430001'
-])
-
-export function normalizeNfcUid(value) {
-	return String(value || '').replace(/[^0-9a-f]/gi, '').toUpperCase()
-}
-
-export function isAuthorizedNfcUid(value) {
-	const uid = normalizeNfcUid(value)
-	return uid.length > 0 && NFC_UID_ALLOWLIST.includes(uid)
-}

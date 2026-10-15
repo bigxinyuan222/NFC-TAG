@@ -72,9 +72,9 @@
 	import AppTabbar from '@/components/app-tabbar/index.vue'
 	import CheckinResult from '@/components/checkin-result/index.vue'
 	import { clearSession, consumeNfcRescanRequired, consumePendingNfcTag, getSession, hasSession } from '@/utils/session'
-	import { CHECKIN_SLOTS, getCurrentCheckinSlot, getTodayCheckinSummary, getUserCheckinRecords, isCheckinSlotMatched, saveCheckinRecord } from '@/utils/checkin-record'
+	import { getTodayCheckinSummary, saveCheckinRecord } from '@/utils/checkin-record'
 	import { submitCheckin as submitCheckinRequest } from '@/api/checkin'
-	import { NFC_CHECKIN_POINT_ID, isAuthorizedNfcUid } from '@/utils/nfc-config'
+	import { NFC_CHECKIN_POINT_ID } from '@/utils/nfc-config'
 	import { releaseNfcSubmissionLock } from '@/utils/nfc-checkin'
 	import { getTheme } from '@/utils/theme'
 	import { formatClockTime, formatDateText } from '@/utils/time'
@@ -192,53 +192,19 @@
 					return
 				}
 				this.requiresNfcRescan = false
-				if (!isAuthorizedNfcUid(tag && tag.uid)) {
-					uni.showToast({ title: '非授权打卡卡片', icon: 'none' })
-					releaseNfcSubmissionLock()
-					return
-				}
-				const now = new Date()
-				const slot = getCurrentCheckinSlot(now)
-				if (!slot) {
-					uni.showToast({ title: '当前不在打卡时间内', icon: 'none' })
-					releaseNfcSubmissionLock()
-					return
-				}
-				const session = { userName: this.userName, department: this.department }
-				if (isCheckinSlotMatched(getUserCheckinRecords(session), now, slot)) {
-					uni.showToast({ title: '当前班次已打卡', icon: 'none' })
-					releaseNfcSubmissionLock()
-					return
-				}
 				this.submitCheckin({
 					message: '正在提交打卡',
 					pointId: NFC_CHECKIN_POINT_ID,
-					slotId: slot.slotId,
-					type: slot.type,
-					time: now.getTime(),
+					uid: tag && tag.uid ? tag.uid : '',
+					time: Date.now(),
 					source: 'nfc'
 				}, true).finally(releaseNfcSubmissionLock)
 			},
 			async submitCheckin(payload, showResult) {
-				const slot = payload.slotId
-					? CHECKIN_SLOTS.find((item) => item.slotId === payload.slotId)
-					: getCurrentCheckinSlot(new Date())
 				this.isCheckingIn = true
 				let success = false
 				let message = payload.message || '打卡失败'
 				const checkinTime = payload.time || Date.now()
-
-				if (!slot) {
-					this.result = {
-						success: false,
-						message: '当前不在打卡时间内',
-						pointId: payload.pointId || '',
-						timeText: formatClockTime(new Date(checkinTime))
-					}
-					this.isCheckingIn = false
-					if (showResult) this.resultVisible = true
-					return { success: false, slot: null }
-				}
 
 				try {
 					if (!payload.pointId) {
@@ -246,7 +212,8 @@
 					}
 
 					const result = await submitCheckinRequest({
-						pointId: payload.pointId
+						pointId: payload.pointId,
+						uid: payload.uid || ''
 					})
 					const body = result.body || {}
 					if (result.success) {
@@ -254,6 +221,7 @@
 						message = result.message
 						console.log('[打卡成功]', {
 							pointId: payload.pointId,
+							uid: payload.uid,
 							response: body
 						})
 					} else {
@@ -289,9 +257,7 @@
 						department: this.department
 					}
 					saveCheckinRecord(session, {
-						pointId: payload.pointId || slot.pointId,
-						slotId: slot.slotId,
-						type: slot.type,
+						pointId: payload.pointId || '',
 						time: checkinTime,
 						message,
 						source: payload.source || 'api'
@@ -301,7 +267,7 @@
 
 				if (showResult) this.resultVisible = true
 				this.isCheckingIn = false
-				return { success, slot }
+				return { success }
 			},
 				closeResult() {
 					this.resultVisible = false

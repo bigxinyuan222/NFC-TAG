@@ -56,7 +56,7 @@ export function getMyCheckins({ page = 1, pageSize = 20 } = {}) {
 	})
 }
 
-export function submitCheckin({ pointId }) {
+export function submitCheckin({ pointId, uid }) {
 	const token = getToken()
 	return new Promise((resolve, reject) => {
 		if (!token) {
@@ -74,7 +74,8 @@ export function submitCheckin({ pointId }) {
 				'Content-Type': 'application/json'
 			},
 			data: {
-				pointId
+				pointId,
+				uid
 			},
 			success: (response) => {
 				const body = response.data && typeof response.data === 'object' ? response.data : {}

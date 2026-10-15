@@ -1,6 +1,5 @@
 <script>
 	import { clearSession, hasSession, requireNfcRescan, setPendingNfcTag } from './utils/session'
-	import { isAuthorizedNfcUid } from './utils/nfc-config'
 	import { acquireNfcSubmissionLock, startNfcScan, stopNfcScan } from './utils/nfc-checkin'
 
 let lastHandledUri = ''
@@ -26,10 +25,6 @@ const URI_DEBOUNCE_MS = 1000
 
 		methods: {
 			handleNfcTag(tag) {
-				if (!isAuthorizedNfcUid(tag && tag.uid)) {
-					uni.showToast({ title: '非授权打卡卡片', icon: 'none' })
-					return
-				}
 				if (!hasSession()) {
 					uni.reLaunch({
 						url: '/pages/login/index'
