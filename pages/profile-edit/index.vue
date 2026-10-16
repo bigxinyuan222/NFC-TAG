@@ -28,12 +28,34 @@
 					<input class="field-input" :value="form.department" @input="handleInput('department', $event)" placeholder="请输入部门" placeholder-class="field-placeholder" />
 				</view>
 			</view>
+
+			<view class="form-card password-card">
+				<view class="card-title-row">
+					<text class="card-title">修改密码</text>
+				</view>
+				<view class="field">
+					<text class="field-label">原密码</text>
+					<input class="field-input" password :value="passwordForm.oldPassword" @input="handlePasswordInput('oldPassword', $event)" maxlength="128" placeholder="请输入原密码" placeholder-class="field-placeholder" />
+				</view>
+				<view class="field">
+					<text class="field-label">新密码</text>
+					<input class="field-input" password :value="passwordForm.newPassword" @input="handlePasswordInput('newPassword', $event)" maxlength="128" placeholder="请输入新密码" placeholder-class="field-placeholder" />
+				</view>
+				<view class="field">
+					<text class="field-label">确认新密码</text>
+					<input class="field-input" password :value="passwordForm.confirmPassword" @input="handlePasswordInput('confirmPassword', $event)" maxlength="128" placeholder="请再次输入新密码" placeholder-class="field-placeholder" />
+				</view>
+				<view class="password-submit" @tap="handleChangePassword">
+					<text class="password-submit-text">{{ isChangingPassword ? '提交中…' : '修改密码' }}</text>
+				</view>
+			</view>
 		</scroll-view>
 	</view>
 </template>
 
 <script>
-	import { getSession, saveSession } from '@/utils/session'
+	import { changePassword } from '@/api/auth'
+	import { clearSession, getSession, saveSession } from '@/utils/session'
 	import { getTheme } from '@/utils/theme'
 
 	export default {
@@ -45,7 +67,13 @@
 					userName: '',
 					department: '',
 					avatarUrl: ''
-				}
+				},
+				passwordForm: {
+					oldPassword: '',
+					newPassword: '',
+					confirmPassword: ''
+				},
+				isChangingPassword: false
 			}
 		},
 		onShow() {
@@ -68,6 +96,44 @@
 			},
 			handleInput(key, event) {
 				this.form[key] = event.detail.value
+			},
+			handlePasswordInput(key, event) {
+				this.passwordForm[key] = event.detail.value
+			},
+			async handleChangePassword() {
+				if (this.isChangingPassword) return
+				const oldPassword = this.passwordForm.oldPassword || ''
+				const newPassword = this.passwordForm.newPassword || ''
+				const confirmPassword = this.passwordForm.confirmPassword || ''
+
+				if (!oldPassword || !newPassword || !confirmPassword) {
+					uni.showToast({ title: '请填写完整密码信息', icon: 'none' })
+					return
+				}
+				if (newPassword === oldPassword) {
+					uni.showToast({ title: '新密码不能与旧密码相同', icon: 'none' })
+					return
+				}
+				if (newPassword !== confirmPassword) {
+					uni.showToast({ title: '两次输入的新密码不一致', icon: 'none' })
+					return
+				}
+
+				this.isChangingPassword = true
+				try {
+					await changePassword({ oldPassword, newPassword })
+					this.passwordForm = { oldPassword: '', newPassword: '', confirmPassword: '' }
+					uni.showToast({ title: '密码修改成功', icon: 'success' })
+				} catch (error) {
+					if (error && error.isAuthError) {
+						clearSession()
+						uni.reLaunch({ url: '/pages/login/index' })
+						return
+					}
+					uni.showToast({ title: (error && error.message) || '密码修改失败', icon: 'none' })
+				} finally {
+					this.isChangingPassword = false
+				}
 			},
 			chooseAvatar() {
 				uni.chooseImage({
@@ -226,6 +292,32 @@
 		padding: 8rpx 0;
 	}
 
+	.card-title-row {
+		padding: 26rpx 28rpx 0;
+	}
+
+	.card-title {
+		color: #3D3226;
+		font-size: 28rpx;
+		font-weight: 600;
+	}
+
+	.password-submit {
+		margin: 16rpx 28rpx 28rpx;
+		height: 84rpx;
+		border-radius: 20rpx;
+		background: linear-gradient(135deg, #FFB84D 0%, #F59A23 100%);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.password-submit-text {
+		color: #ffffff;
+		font-size: 28rpx;
+		font-weight: 600;
+	}
+
 	.field {
 		padding: 26rpx 28rpx;
 	}
@@ -261,6 +353,10 @@
 
 	.theme-dark .nav-title,
 	.theme-dark .field-input {
+		color: #F5E9D9;
+	}
+
+	.theme-dark .card-title {
 		color: #F5E9D9;
 	}
 
