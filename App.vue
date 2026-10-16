@@ -1,5 +1,10 @@
 <script>
-	import { clearSession, hasSession, setPendingCheckinResult } from './utils/session'
+	import { clearSession, hasSession, requireNfcRescan, setPendingNfcTag } from './utils/session'
+	import { acquireNfcSubmissionLock, startNfcScan, stopNfcScan } from './utils/nfc-checkin'
+
+let lastHandledUri = ''
+let lastHandledUriTime = 0
+const URI_DEBOUNCE_MS = 1000
 
 	export default {
 		onLaunch() {
@@ -10,20 +15,37 @@
 			})
 			// #endif
 		},
+		onShow() {
+			const state = startNfcScan((tag) => this.handleNfcTag(tag))
+			if (state && state.error) console.warn('[NFC 不可用]', state.error)
+		},
+		onHide() {
+			stopNfcScan()
+		},
 
 		methods: {
+			handleNfcTag(tag) {
+				if (!hasSession()) {
+					uni.reLaunch({
+						url: '/pages/login/index'
+					})
+					return
+				}
+				if (!acquireNfcSubmissionLock()) {
+					uni.showToast({ title: '正在处理本次打卡', icon: 'none' })
+					return
+				}
+				setPendingNfcTag(tag)
+				uni.reLaunch({
+					url: '/pages/checkin/index'
+				})
+			},
 			handle(url) {
 				if (!url || url.indexOf('mycheckin://') !== 0) return
-				const pointId = url.split('/').pop()
-				const payload = {
-					pointId,
-					time: Date.now(),
-					message: pointId ? '识别到打卡点，已准备提交本次打卡' : '已接收到打卡请求',
-					success: true
-				}
-
-				setPendingCheckinResult(payload)
-
+				const now = Date.now()
+				if (url === lastHandledUri && now - lastHandledUriTime < URI_DEBOUNCE_MS) return
+				lastHandledUri = url
+				lastHandledUriTime = now
 				if (!hasSession()) {
 					clearSession()
 					uni.reLaunch({
@@ -31,16 +53,12 @@
 					})
 					return
 				}
+				requireNfcRescan()
 
 				uni.reLaunch({
 					url: '/pages/checkin/index'
 				})
 
-				uni.showToast({
-					title: pointId ? '已识别打卡点' : '收到打卡请求',
-					icon: 'none',
-					duration: 2000
-				})
 			}
 		}
 	}
@@ -48,6 +66,6 @@
 
 <style>
 page {
-	background: #f7f9fc;
+	background: #FDF6E9;
 }
 </style>

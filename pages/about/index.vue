@@ -9,8 +9,8 @@
 		</view>
 
 		<view class="about-card">
-			<text class="brand">乐知智能考勤</text>
-			<text class="desc">乐知智能考勤是一款面向企业日常出勤场景的移动端应用，专注于提供简洁、稳定、直观的打卡记录与个人信息管理体验。</text>
+			<text class="brand">喵呜打卡</text>
+			<text class="desc">喵呜打卡是一款面向企业日常出勤场景的移动端应用，专注于提供简洁、稳定、直观的打卡记录与个人信息管理体验。</text>
 			<text class="desc">当前版本覆盖员工登录、上下班打卡、历史记录查看、个人资料维护以及主题切换等基础功能。</text>
 		</view>
 	</view>
@@ -44,7 +44,7 @@
 
 <style>
 	page {
-		background: #f6f8fc;
+		background: #FDF6E9;
 	}
 
 	.wrap {
@@ -52,7 +52,7 @@
 		height: 100dvh;
 		padding: 88rpx 32rpx 32rpx;
 		box-sizing: border-box;
-		background: linear-gradient(180deg, #ffffff 0%, #f7faff 52%, #ffffff 100%);
+		background: linear-gradient(180deg, #FFF9EF 0%, #FDF3E4 60%, #FBEDD9 100%);
 	}
 
 		.nav-bar {
@@ -80,7 +80,7 @@
 		}
 
 	.nav-title {
-		color: #1f2937;
+		color: #3D3226;
 		font-size: 32rpx;
 		font-weight: 600;
 	}
@@ -90,12 +90,12 @@
 		padding: 34rpx 30rpx;
 		background: rgba(255, 255, 255, 0.98);
 		border-radius: 28rpx;
-		box-shadow: 0 12rpx 30rpx rgba(84, 102, 139, 0.08);
+		box-shadow: 0 12rpx 30rpx rgba(212, 162, 94, 0.14);
 	}
 
 	.brand {
 		display: block;
-		color: #111827;
+		color: #3D3226;
 		font-size: 34rpx;
 		font-weight: 700;
 	}
@@ -103,26 +103,26 @@
 	.desc {
 		display: block;
 		margin-top: 18rpx;
-		color: #4b5563;
+		color: #7A6650;
 		font-size: 26rpx;
 		line-height: 1.7;
 	}
 
 	.theme-dark {
-		background: linear-gradient(180deg, #0f1115 0%, #171a20 55%, #0f1115 100%);
+		background: linear-gradient(180deg, #211A14 0%, #2A211A 55%, #211A14 100%);
 	}
 
 	.theme-dark .nav-title,
 	.theme-dark .brand {
-		color: #f3f4f6;
+		color: #F5E9D9;
 	}
 
 	.theme-dark .about-card {
-		background: rgba(27, 31, 38, 0.96);
+		background: rgba(48, 39, 31, 0.96);
 		box-shadow: none;
 	}
 
 	.theme-dark .desc {
-		color: #c2c8d1;
+		color: #C9B8A2;
 	}
 </style>

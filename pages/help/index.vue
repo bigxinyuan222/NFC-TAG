@@ -73,7 +73,7 @@
 
 <style>
 	page {
-		background: #f6f8fc;
+		background: #FDF6E9;
 	}
 
 	.wrap {
@@ -81,7 +81,7 @@
 		height: 100dvh;
 		padding: 88rpx 32rpx 32rpx;
 		box-sizing: border-box;
-		background: linear-gradient(180deg, #ffffff 0%, #f7faff 52%, #ffffff 100%);
+		background: linear-gradient(180deg, #FFF9EF 0%, #FDF3E4 60%, #FBEDD9 100%);
 	}
 
 	.nav-bar {
@@ -104,7 +104,7 @@
 	}
 
 	.nav-title {
-		color: #1f2937;
+		color: #3D3226;
 		font-size: 32rpx;
 		font-weight: 600;
 	}
@@ -112,7 +112,7 @@
 	.nav-action {
 		min-width: 72rpx;
 		text-align: right;
-		color: #3b82f6;
+		color: #F59A23;
 		font-size: 28rpx;
 		font-weight: 600;
 	}
@@ -122,12 +122,12 @@
 		padding: 32rpx 28rpx 28rpx;
 		background: rgba(255, 255, 255, 0.98);
 		border-radius: 28rpx;
-		box-shadow: 0 12rpx 30rpx rgba(84, 102, 139, 0.08);
+		box-shadow: 0 12rpx 30rpx rgba(212, 162, 94, 0.12);
 	}
 
 	.panel-title {
 		display: block;
-		color: #111827;
+		color: #3D3226;
 		font-size: 30rpx;
 		font-weight: 700;
 	}
@@ -135,7 +135,7 @@
 	.panel-desc {
 		display: block;
 		margin-top: 14rpx;
-		color: #6b7280;
+		color: #7A6650;
 		font-size: 24rpx;
 		line-height: 1.7;
 	}
@@ -146,54 +146,54 @@
 		margin-top: 24rpx;
 		padding: 22rpx;
 		border-radius: 24rpx;
-		background: #f7f9fc;
-		color: #111827;
+		background: #fffaf2;
+		color: #3D3226;
 		font-size: 26rpx;
 		line-height: 1.7;
 		box-sizing: border-box;
 	}
 
 	.feedback-placeholder {
-		color: #b6becb;
+		color: #B9A88F;
 	}
 
 	.count-text {
 		display: block;
 		margin-top: 14rpx;
 		text-align: right;
-		color: #9ca3af;
+		color: #A08C77;
 		font-size: 22rpx;
 	}
 
 	.theme-dark {
-		background: linear-gradient(180deg, #0f1115 0%, #171a20 55%, #0f1115 100%);
+		background: linear-gradient(180deg, #211A14 0%, #2A211A 55%, #211A14 100%);
 	}
 
 	.theme-dark .nav-title,
 	.theme-dark .panel-title,
 	.theme-dark .feedback-input {
-		color: #f3f4f6;
+		color: #F5E9D9;
 	}
 
 	.theme-dark .nav-action {
-		color: #e5e7eb;
+		color: #F5A623;
 	}
 
 	.theme-dark .panel {
-		background: rgba(27, 31, 38, 0.96);
+		background: rgba(48, 39, 31, 0.96);
 		box-shadow: none;
 	}
 
 	.theme-dark .panel-desc,
 	.theme-dark .count-text {
-		color: #9ca3af;
+		color: #B09A83;
 	}
 
 	.theme-dark .feedback-input {
-		background: #111318;
+		background: #2A2219;
 	}
 
 	.theme-dark .feedback-placeholder {
-		color: #6b7280;
+		color: #8A7761;
 	}
 </style>

@@ -36,7 +36,7 @@
 
 <script>
 	import AppTabbar from '@/components/app-tabbar/index.vue'
-	import { clearPendingCheckinResult, clearSession, getSession } from '@/utils/session'
+	import { clearSession, getSession } from '@/utils/session'
 	import { getTheme } from '@/utils/theme'
 
 	export default {
@@ -134,14 +134,14 @@
 
 <style>
 	page {
-		background: #fdfefe;
+		background: #FDF6E9;
 	}
 
 	.wrap {
 		position: relative;
 		height: 100vh;
 		height: 100dvh;
-		background: linear-gradient(180deg, #ffffff 0%, #f9fbff 44%, #f4f8ff 68%, #ffffff 100%);
+		background: linear-gradient(180deg, #FFF9EF 0%, #FDF3E4 60%, #FBEDD9 100%);
 		overflow: hidden;
 	}
 
@@ -149,7 +149,7 @@
 		position: absolute;
 		border-radius: 50%;
 		pointer-events: none;
-		background: radial-gradient(circle, rgba(110, 164, 255, 0.12) 0%, rgba(110, 164, 255, 0.05) 42%, rgba(110, 164, 255, 0) 74%);
+		background: radial-gradient(circle, rgba(255, 184, 77, 0.16) 0%, rgba(255, 184, 77, 0.07) 42%, rgba(255, 184, 77, 0) 74%);
 	}
 
 	.bg-orb-left {
@@ -177,7 +177,7 @@
 	.top-glow {
 		height: 176rpx;
 		border-radius: 0 0 150rpx 150rpx;
-		background: radial-gradient(circle at 50% 0, rgba(118, 170, 255, 0.14) 0, rgba(118, 170, 255, 0.06) 34%, rgba(118, 170, 255, 0.02) 56%, rgba(118, 170, 255, 0) 76%);
+		background: radial-gradient(circle at 50% 0, rgba(255, 199, 130, 0.30) 0, rgba(255, 199, 130, 0.12) 34%, rgba(255, 199, 130, 0.04) 56%, rgba(255, 199, 130, 0) 76%);
 	}
 
 	.profile-head {
@@ -194,7 +194,7 @@
 		box-sizing: border-box;
 		border-radius: 50%;
 		background: rgba(255, 255, 255, 0.84);
-		box-shadow: 0 18rpx 42rpx rgba(109, 138, 196, 0.12);
+		box-shadow: 0 18rpx 42rpx rgba(212, 162, 94, 0.18);
 	}
 
 	.avatar-image {
@@ -206,7 +206,7 @@
 	.profile-name {
 		display: block;
 		margin-top: 28rpx;
-		color: #1f2937;
+		color: #3D3226;
 		font-size: 46rpx;
 		font-weight: 600;
 		line-height: 1.25;
@@ -215,7 +215,7 @@
 	.profile-meta {
 		display: block;
 		margin-top: 14rpx;
-		color: #8b95a7;
+		color: #A08C77;
 		font-size: 24rpx;
 		line-height: 1.4;
 	}
@@ -224,7 +224,7 @@
 	.logout-card {
 		background: rgba(255, 255, 255, 0.98);
 		border-radius: 32rpx;
-		box-shadow: 0 12rpx 34rpx rgba(78, 99, 141, 0.08);
+		box-shadow: 0 12rpx 34rpx rgba(212, 162, 94, 0.12);
 	}
 
 	.menu-card {
@@ -247,7 +247,7 @@
 	}
 
 	.menu-row + .menu-row {
-		border-top: 1rpx solid rgba(227, 232, 240, 0.92);
+		border-top: 1rpx solid rgba(242, 231, 213, 0.92);
 	}
 
 	.menu-left {
@@ -261,7 +261,7 @@
 	}
 
 	.menu-label {
-		color: #1f2937;
+		color: #3D3226;
 		font-size: 28rpx;
 		font-weight: 600;
 	}
@@ -279,40 +279,40 @@
 	}
 
 	.logout-text {
-		color: #ff5a5f;
+		color: #E0685F;
 		font-size: 30rpx;
 		font-weight: 600;
 	}
 
 	.theme-dark {
-		background: linear-gradient(180deg, #0f1115 0%, #171a20 55%, #0f1115 100%);
+		background: linear-gradient(180deg, #211A14 0%, #2A211A 55%, #211A14 100%);
 	}
 
 	.theme-dark .bg-orb {
-		background: radial-gradient(circle, rgba(150, 150, 150, 0.08) 0%, rgba(150, 150, 150, 0.03) 42%, rgba(150, 150, 150, 0) 74%);
+		background: radial-gradient(circle, rgba(245, 166, 35, 0.10) 0%, rgba(245, 166, 35, 0.04) 42%, rgba(245, 166, 35, 0) 74%);
 	}
 
 	.theme-dark .top-glow {
-		background: radial-gradient(circle at 50% 0, rgba(110, 110, 110, 0.12) 0, rgba(110, 110, 110, 0.05) 34%, rgba(110, 110, 110, 0.02) 56%, rgba(110, 110, 110, 0) 76%);
+		background: radial-gradient(circle at 50% 0, rgba(245, 166, 35, 0.16) 0, rgba(245, 166, 35, 0.07) 34%, rgba(245, 166, 35, 0.03) 56%, rgba(245, 166, 35, 0) 76%);
 	}
 
 	.theme-dark .profile-name,
 	.theme-dark .menu-label {
-		color: #f3f4f6;
+		color: #F5E9D9;
 	}
 
 	.theme-dark .profile-meta {
-		color: #9ca3af;
+		color: #B09A83;
 	}
 
 	.theme-dark .menu-card,
 	.theme-dark .logout-card,
 	.theme-dark .avatar-shell {
-		background: rgba(24, 27, 33, 0.96);
+		background: rgba(48, 39, 31, 0.96);
 		box-shadow: none;
 	}
 
 	.theme-dark .menu-row + .menu-row {
-		border-top-color: rgba(58, 63, 73, 0.9);
+		border-top-color: rgba(74, 61, 48, 0.9);
 	}
 </style>

@@ -131,7 +131,7 @@
 
 <style>
 	page {
-		background: #f6f8fc;
+		background: #FDF6E9;
 	}
 
 	.wrap {
@@ -139,7 +139,7 @@
 		flex-direction: column;
 		height: 100vh;
 		height: 100dvh;
-		background: linear-gradient(180deg, #ffffff 0%, #f7faff 52%, #ffffff 100%);
+		background: linear-gradient(180deg, #FFF9EF 0%, #FDF3E4 60%, #FBEDD9 100%);
 	}
 
 	.nav-bar {
@@ -175,13 +175,13 @@
 	}
 
 	.nav-title {
-		color: #1f2937;
+		color: #3D3226;
 		font-size: 32rpx;
 		font-weight: 600;
 	}
 
 	.nav-action {
-		color: #3b82f6;
+		color: #F59A23;
 		font-size: 28rpx;
 		font-weight: 600;
 		min-width: 88rpx;
@@ -199,7 +199,7 @@
 	.form-card {
 		background: rgba(255, 255, 255, 0.98);
 		border-radius: 28rpx;
-		box-shadow: 0 12rpx 30rpx rgba(84, 102, 139, 0.08);
+		box-shadow: 0 12rpx 30rpx rgba(212, 162, 94, 0.12);
 	}
 
 	.avatar-card {
@@ -217,7 +217,7 @@
 
 	.avatar-tip {
 		margin-top: 18rpx;
-		color: #8b95a7;
+		color: #A08C77;
 		font-size: 24rpx;
 	}
 
@@ -231,12 +231,12 @@
 	}
 
 	.field + .field {
-		border-top: 1rpx solid rgba(229, 233, 241, 0.95);
+		border-top: 1rpx solid rgba(242, 231, 213, 0.95);
 	}
 
 	.field-label {
 		display: block;
-		color: #4b5563;
+		color: #7A6650;
 		font-size: 24rpx;
 		margin-bottom: 16rpx;
 	}
@@ -245,49 +245,49 @@
 		height: 80rpx;
 		padding: 0 22rpx;
 		border-radius: 20rpx;
-		background: #f7f9fc;
-		color: #111827;
+		background: #fffaf2;
+		color: #3D3226;
 		font-size: 28rpx;
 		box-sizing: border-box;
 	}
 
 	.field-placeholder {
-		color: #b6becb;
+		color: #B9A88F;
 	}
 
 	.theme-dark {
-		background: linear-gradient(180deg, #0f1115 0%, #171a20 55%, #0f1115 100%);
+		background: linear-gradient(180deg, #211A14 0%, #2A211A 55%, #211A14 100%);
 	}
 
 	.theme-dark .nav-title,
 	.theme-dark .field-input {
-		color: #f3f4f6;
+		color: #F5E9D9;
 	}
 
 	.theme-dark .nav-action {
-		color: #e5e7eb;
+		color: #F5A623;
 	}
 
 	.theme-dark .avatar-card,
 	.theme-dark .form-card {
-		background: rgba(27, 31, 38, 0.96);
+		background: rgba(48, 39, 31, 0.96);
 		box-shadow: none;
 	}
 
 	.theme-dark .field + .field {
-		border-top-color: rgba(58, 63, 73, 0.9);
+		border-top-color: rgba(74, 61, 48, 0.9);
 	}
 
 	.theme-dark .field-label,
 	.theme-dark .avatar-tip {
-		color: #9ca3af;
+		color: #B09A83;
 	}
 
 	.theme-dark .field-input {
-		background: #111318;
+		background: #2A2219;
 	}
 
 	.theme-dark .field-placeholder {
-		color: #6b7280;
+		color: #8A7761;
 	}
 </style>

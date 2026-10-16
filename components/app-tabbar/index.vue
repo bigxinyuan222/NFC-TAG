@@ -68,7 +68,7 @@
 		height: 108rpx;
 		padding-bottom: env(safe-area-inset-bottom);
 		background: rgba(255, 255, 255, 0.98);
-		box-shadow: 0 -8rpx 20rpx rgba(32, 44, 80, 0.05);
+		box-shadow: 0 -8rpx 20rpx rgba(212, 162, 94, 0.10);
 	}
 
 	.tab-item {
@@ -77,11 +77,11 @@
 		align-items: center;
 		justify-content: center;
 		gap: 8rpx;
-		color: #9ca3af;
+		color: #C4B2A0;
 	}
 
 	.tab-item.active {
-		color: #3b82f6;
+		color: #F59A23;
 	}
 
 	.tab-icon {
@@ -95,15 +95,15 @@
 	}
 
 	.tabbar.theme-dark {
-		background: rgba(17, 19, 24, 0.98);
-		box-shadow: 0 -8rpx 20rpx rgba(0, 0, 0, 0.22);
+		background: rgba(42, 34, 27, 0.98);
+		box-shadow: 0 -8rpx 20rpx rgba(0, 0, 0, 0.40);
 	}
 
 	.tabbar.theme-dark .tab-item {
-		color: #9ca3af;
+		color: #9C8873;
 	}
 
 	.tabbar.theme-dark .tab-item.active {
-		color: #3b82f6;
+		color: #F5A623;
 	}
 </style>
