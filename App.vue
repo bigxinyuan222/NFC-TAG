@@ -66,6 +66,6 @@ const URI_DEBOUNCE_MS = 1000
 
 <style>
 page {
-	background: #f7f9fc;
+	background: #FDF6E9;
 }
 </style>

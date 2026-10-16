@@ -263,17 +263,17 @@
 
 <style>
 	page {
-		background: #eef4ff;
+		background: #FDF6E9;
 	}
 
 	.wrap {
 		height: 100vh;
 		height: 100dvh;
-		background: linear-gradient(180deg, #eef4ff 0%, #f8fbff 68%, #eef4ff 100%);
+		background: linear-gradient(180deg, #FFF9EF 0%, #FDF3E4 60%, #FBEDD9 100%);
 	}
 
 	.theme-dark {
-		background: linear-gradient(180deg, #0f1115 0%, #171a20 55%, #0f1115 100%);
+		background: linear-gradient(180deg, #211A14 0%, #2A211A 55%, #211A14 100%);
 	}
 
 	.theme-dark .page-title,
@@ -281,15 +281,15 @@
 	.theme-dark .stat-num,
 	.theme-dark .schedule-title,
 	.theme-dark .schedule-name {
-		color: #f3f4f6;
+		color: #F5E9D9;
 	}
 
 	.theme-dark .stat-primary {
-		color: #7ea3ff;
+		color: #F5A623;
 	}
 
 	.theme-dark .stat-warn {
-		color: #e8a45c;
+		color: #E8A45C;
 	}
 
 	.theme-dark .date-text,
@@ -297,27 +297,27 @@
 	.theme-dark .schedule-date,
 	.theme-dark .schedule-time,
 	.theme-dark .schedule-status {
-		color: #9ca3af;
+		color: #B09A83;
 	}
 
 	.theme-dark .source-message,
 	.theme-dark .load-message {
-		color: #9ca3af;
+		color: #B09A83;
 	}
 
 	.theme-dark .date-bar,
 	.theme-dark .stats-card,
 	.theme-dark .schedule-card {
-		background: rgba(24, 27, 33, 0.96);
+		background: rgba(48, 39, 31, 0.96);
 		box-shadow: none;
 	}
 
 	.theme-dark .schedule-row {
-		border-color: #30343b;
+		border-color: #3B3026;
 	}
 
 	.theme-dark .schedule-checked {
-		color: #7ea3ff;
+		color: #F5A623;
 	}
 
 	.theme-dark .schedule-late {
@@ -353,7 +353,7 @@
 	}
 
 	.page-title {
-		color: #182033;
+		color: #3D3226;
 		font-size: 40rpx;
 		font-weight: 700;
 		line-height: 1.2;
@@ -368,7 +368,7 @@
 	.stats-card,
 	.schedule-card {
 		background: rgba(255, 255, 255, 0.98);
-		box-shadow: 0 12rpx 30rpx rgba(45, 68, 128, 0.06);
+		box-shadow: 0 12rpx 30rpx rgba(212, 162, 94, 0.10);
 	}
 
 	.stats-card {
@@ -381,7 +381,7 @@
 	}
 
 	.stats-title {
-		color: #182033;
+		color: #3D3226;
 		font-size: 27rpx;
 		font-weight: 700;
 	}
@@ -405,14 +405,14 @@
 	}
 
 	.stat-num {
-		color: #182033;
+		color: #3D3226;
 		font-size: 48rpx;
 		font-weight: 700;
 		line-height: 1;
 	}
 
 	.stat-primary {
-		color: #2f6dff;
+		color: #F59A23;
 	}
 
 	.stat-warn {
@@ -420,7 +420,7 @@
 	}
 
 	.stat-label {
-		color: #8b94a6;
+		color: #A08C77;
 		font-size: 21rpx;
 	}
 
@@ -460,7 +460,7 @@
 	}
 
 	.date-text {
-		color: #666f82;
+		color: #8A7660;
 		font-size: 23rpx;
 		font-weight: 600;
 		white-space: nowrap;
@@ -480,19 +480,19 @@
 	}
 
 	.schedule-title {
-		color: #182033;
+		color: #3D3226;
 		font-size: 27rpx;
 		font-weight: 700;
 	}
 
 	.schedule-date {
-		color: #8b94a6;
+		color: #A08C77;
 		font-size: 21rpx;
 	}
 
 	.schedule-row {
 		min-height: 106rpx;
-		border-top: 1rpx solid #edf0f5;
+		border-top: 1rpx solid #F2E7D5;
 	}
 
 	.schedule-row.schedule-pair-start {
@@ -517,7 +517,7 @@
 	}
 
 	.schedule-name {
-		color: #182033;
+		color: #3D3226;
 		font-size: 26rpx;
 		font-weight: 600;
 	}
@@ -525,7 +525,7 @@
 	.schedule-time,
 	.schedule-status,
 	.schedule-actual-time {
-		color: #8b94a6;
+		color: #A08C77;
 		font-size: 23rpx;
 	}
 
@@ -538,7 +538,7 @@
 	}
 
 	.schedule-checked {
-		color: #2f6dff;
+		color: #F59A23;
 		font-weight: 600;
 	}
 
@@ -552,7 +552,7 @@
 		width: 640rpx;
 		max-width: 100%;
 		margin: 12rpx auto 0;
-		color: #8a94a6;
+		color: #A08C77;
 		font-size: 22rpx;
 		text-align: center;
 	}

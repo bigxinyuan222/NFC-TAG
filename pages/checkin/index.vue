@@ -281,14 +281,14 @@
 
 <style>
 	page {
-		background: #eef4ff;
+		background: #FDF6E9;
 	}
 
 	.wrap {
 		height: 100vh;
 		height: 100dvh;
 		padding: 24rpx 24rpx 112rpx;
-		background: linear-gradient(180deg, #eef4ff 0%, #f7faff 66%, #edf3ff 100%);
+		background: linear-gradient(180deg, #FFF9EF 0%, #FDF3E4 60%, #FBEDD9 100%);
 		box-sizing: border-box;
 		overflow: hidden;
 	}
@@ -315,13 +315,13 @@
 
 	.title {
 		display: block;
-		color: #182033;
+		color: #3D3226;
 		font-size: 52rpx;
 		font-weight: 700;
 	}
 
 	.name {
-		color: #2f6dff;
+		color: #F59A23;
 	}
 
 	.dept-row {
@@ -337,7 +337,7 @@
 	}
 
 	.subtitle {
-		color: #7a849a;
+		color: #A08C77;
 		font-size: 24rpx;
 	}
 
@@ -349,7 +349,7 @@
 		margin-top: 8rpx;
 		border-radius: 50%;
 		background: rgba(255, 255, 255, 0.78);
-		box-shadow: 0 10rpx 24rpx rgba(91, 118, 183, 0.12);
+		box-shadow: 0 10rpx 24rpx rgba(212, 162, 94, 0.16);
 		overflow: hidden;
 	}
 
@@ -371,7 +371,7 @@
 		height: 28rpx;
 		margin-left: -14rpx;
 		border-radius: 50%;
-		background: #2f6dff;
+		background: #F59A23;
 	}
 
 	.avatar-body {
@@ -382,11 +382,11 @@
 		height: 24rpx;
 		margin-left: -21rpx;
 		border-radius: 24rpx 24rpx 18rpx 18rpx;
-		background: #2f6dff;
+		background: #F59A23;
 	}
 
 	.theme-dark {
-		background: linear-gradient(180deg, #0f1115 0%, #171a20 55%, #0f1115 100%);
+		background: linear-gradient(180deg, #211A14 0%, #2A211A 55%, #211A14 100%);
 	}
 
 	.theme-dark .title,
@@ -394,7 +394,7 @@
 	.theme-dark .records-title,
 	.theme-dark .record-label,
 	.theme-dark .record-value {
-		color: #f3f4f6;
+		color: #F5E9D9;
 	}
 
 	.theme-dark .subtitle,
@@ -402,12 +402,12 @@
 	.theme-dark .tip,
 	.theme-dark .records-side,
 	.theme-dark .muted-text {
-		color: #9ca3af;
+		color: #B09A83;
 	}
 
 	.theme-dark .card,
 	.theme-dark .avatar {
-		background: rgba(24, 27, 33, 0.96);
+		background: rgba(48, 39, 31, 0.96);
 		box-shadow: none;
 	}
 
@@ -419,14 +419,14 @@
 
 	.date-text {
 		display: block;
-		color: #6d7891;
+		color: #A08C77;
 		font-size: 26rpx;
 	}
 
 	.time-text {
 		display: block;
 		margin-top: 8rpx;
-		color: #111827;
+		color: #3D3226;
 		font-size: 70rpx;
 		font-weight: 700;
 	}
@@ -449,13 +449,13 @@
 	.pulse-ring-outer {
 		width: 500rpx;
 		height: 500rpx;
-		background: rgba(63, 109, 246, 0.05);
+		background: rgba(245, 154, 35, 0.07);
 	}
 
 	.pulse-ring-inner {
 		width: 400rpx;
 		height: 400rpx;
-		background: rgba(63, 109, 246, 0.08);
+		background: rgba(245, 154, 35, 0.12);
 	}
 
 	.pulse-core {
@@ -467,8 +467,8 @@
 		width: 308rpx;
 		height: 308rpx;
 		border-radius: 50%;
-		background: linear-gradient(180deg, #70a1ff 0%, #2f6dff 100%);
-		box-shadow: 0 18rpx 44rpx rgba(53, 89, 208, 0.22);
+		background: linear-gradient(180deg, #FFB84D 0%, #F59A23 100%);
+		box-shadow: 0 18rpx 44rpx rgba(245, 154, 35, 0.28);
 	}
 
 	.pulse-icon {
@@ -501,13 +501,13 @@
 	.tip-dot {
 		width: 18rpx;
 		height: 18rpx;
-		border: 4rpx solid #9ab8ff;
+		border: 4rpx solid #FFCF8A;
 		border-radius: 50%;
-		box-shadow: 0 0 0 8rpx rgba(154, 184, 255, 0.18);
+		box-shadow: 0 0 0 8rpx rgba(255, 184, 77, 0.22);
 	}
 
 	.tip {
-		color: #3558c3;
+		color: #D9871A;
 		font-size: 30rpx;
 		font-weight: 600;
 	}
@@ -517,7 +517,7 @@
 		padding: 22rpx 22rpx 28rpx;
 		border-radius: 30rpx;
 		background: rgba(255, 255, 255, 0.96);
-		box-shadow: 0 18rpx 50rpx rgba(31, 48, 95, 0.08);
+		box-shadow: 0 18rpx 50rpx rgba(212, 162, 94, 0.12);
 		flex-shrink: 0;
 	}
 
@@ -535,13 +535,13 @@
 	}
 
 	.records-title {
-		color: #182033;
+		color: #3D3226;
 		font-size: 30rpx;
 		font-weight: 700;
 	}
 
 	.records-side {
-		color: #8c96aa;
+		color: #A08C77;
 		font-size: 24rpx;
 	}
 
@@ -561,19 +561,19 @@
 	}
 
 	.record-label {
-		color: #2b3242;
+		color: #4A3D2E;
 		font-size: 25rpx;
 	}
 
 	.record-value {
-		color: #182033;
+		color: #3D3226;
 		font-size: 32rpx;
 		font-weight: 600;
 		flex-shrink: 0;
 	}
 
 	.muted-text {
-		color: #a0a8b8;
+		color: #B9A88F;
 	}
 
 	.records-side {

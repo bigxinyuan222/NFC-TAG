@@ -4,12 +4,12 @@
 			<view class="hero">
 				<view class="logo-shell">
 					<view class="logo-core">
-						<text class="logo-mark">乐知</text>
+						<image class="logo-img" src="/static/app-icon.png" mode="aspectFit" />
 					</view>
 				</view>
 				<text class="welcome">欢迎使用</text>
-				<text class="title">智能打卡系统</text>
-				<text class="subtitle">简单 · 高效 · 准确</text>
+				<text class="title">喵呜打卡</text>
+				<text class="subtitle">打卡不枯燥，和可爱一起变优秀！</text>
 			</view>
 
 			<view class="card">
@@ -59,7 +59,7 @@
 			<text class="safety-text">数据安全保障中</text>
 		</view>
 
-		<text class="copyright">© 2026 乐知智能考勤 版权所有</text>
+		<text class="copyright">© 2026 喵呜打卡</text>
 
 	</view>
 </template>
@@ -266,7 +266,7 @@
 
 <style>
 	page {
-		background: #eef4ff;
+		background: #FDF6E9;
 	}
 
 	.wrap {
@@ -277,7 +277,7 @@
 		height: 100dvh;
 		padding: 100rpx 28rpx 24rpx;
 		overflow: hidden;
-		background: linear-gradient(180deg, #eef4ff 0%, #f7faff 66%, #edf3ff 100%);
+		background: linear-gradient(180deg, #FFF9EF 0%, #FDF3E4 60%, #FBEDD9 100%);
 		box-sizing: border-box;
 	}
 
@@ -304,13 +304,13 @@
 	.wrap::before {
 		top: -40rpx;
 		height: 360rpx;
-		background: radial-gradient(circle at 50% 0, rgba(154, 186, 255, 0.55) 0, rgba(154, 186, 255, 0) 62%);
+		background: radial-gradient(circle at 50% 0, rgba(255, 199, 130, 0.50) 0, rgba(255, 199, 130, 0) 62%);
 	}
 
 	.wrap::after {
 		bottom: -80rpx;
 		height: 280rpx;
-		background: radial-gradient(circle at 50% 100%, rgba(185, 206, 255, 0.45) 0, rgba(185, 206, 255, 0) 68%);
+		background: radial-gradient(circle at 50% 100%, rgba(255, 214, 160, 0.42) 0, rgba(255, 214, 160, 0) 68%);
 	}
 
 	.hero {
@@ -329,26 +329,23 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 140rpx;
-		height: 140rpx;
-		border-radius: 32rpx;
+		width: 150rpx;
+		height: 150rpx;
+		border-radius: 36rpx;
+		overflow: hidden;
 		background: rgba(255, 255, 255, 0.96);
-		box-shadow: 0 18rpx 50rpx rgba(94, 128, 214, 0.18);
+		box-shadow: 0 18rpx 50rpx rgba(212, 162, 94, 0.22);
 	}
 
-	.logo-mark {
-		padding: 26rpx 22rpx;
-		border-radius: 26rpx;
-		background: linear-gradient(180deg, #6ea0ff 0%, #2f6dff 100%);
-		color: #ffffff;
-		font-size: 26rpx;
-		font-weight: 700;
+	.logo-img {
+		width: 150rpx;
+		height: 150rpx;
 	}
 
 	.welcome {
 		display: block;
 		margin-top: 24rpx;
-		color: #4b5d8e;
+		color: #6B573F;
 		font-size: 44rpx;
 		font-weight: 700;
 		line-height: 1.25;
@@ -357,7 +354,7 @@
 	.title {
 		display: block;
 		margin-top: 8rpx;
-		color: #2f6dff;
+		color: #F59A23;
 		font-size: 50rpx;
 		font-weight: 700;
 		line-height: 1.18;
@@ -366,7 +363,7 @@
 	.subtitle {
 		display: block;
 		margin-top: 14rpx;
-		color: #7d879b;
+		color: #A08C77;
 		font-size: 22rpx;
 	}
 
@@ -378,7 +375,7 @@
 		margin-right: 18rpx;
 		border-radius: 36rpx;
 		background: rgba(255, 255, 255, 0.96);
-		box-shadow: 0 20rpx 60rpx rgba(86, 116, 191, 0.12);
+		box-shadow: 0 20rpx 60rpx rgba(212, 162, 94, 0.16);
 		flex-shrink: 0;
 	}
 
@@ -389,7 +386,7 @@
 	.label {
 		display: block;
 		margin-bottom: 12rpx;
-		color: #1d2433;
+		color: #3D3226;
 		font-size: 26rpx;
 		font-weight: 600;
 	}
@@ -399,9 +396,9 @@
 		align-items: center;
 		height: 88rpx;
 		padding: 0 20rpx;
-		border: 1rpx solid #e5eaf5;
+		border: 1rpx solid #F0E3CE;
 		border-radius: 22rpx;
-		background: #ffffff;
+		background: #fffaf2;
 	}
 
 	.department-picker {
@@ -425,7 +422,7 @@
 		height: 88rpx;
 		padding-left: 16rpx;
 		background: transparent;
-		color: #182033;
+		color: #3D3226;
 		font-size: 26rpx;
 	}
 
@@ -435,7 +432,7 @@
 	}
 
 	.input-placeholder {
-		color: #b3bac8;
+		color: #B9A88F;
 		font-size: 26rpx;
 	}
 
@@ -453,8 +450,8 @@
 		margin-top: 60rpx;
 		height: 84rpx;
 		border-radius: 42rpx;
-		background: linear-gradient(135deg, #3f6df6 0%, #2550d9 100%);
-		box-shadow: 0 18rpx 36rpx rgba(56, 94, 214, 0.24);
+		background: linear-gradient(135deg, #FFB84D 0%, #F59A23 100%);
+		box-shadow: 0 18rpx 36rpx rgba(245, 154, 35, 0.28);
 		color: #ffffff;
 		font-size: 30rpx;
 		font-weight: 600;
@@ -469,12 +466,12 @@
 	}
 
 	.switch-tip {
-		color: #9099ac;
+		color: #A08C77;
 	}
 
 	.switch-link {
 		margin-left: 8rpx;
-		color: #2f6dff;
+		color: #F59A23;
 		font-weight: 600;
 	}
 
@@ -490,7 +487,7 @@
 	}
 
 	.safety-text {
-		color: #9099ac;
+		color: #A08C77;
 		font-size: 24rpx;
 	}
 
@@ -505,56 +502,56 @@
 		z-index: 1;
 		display: block;
 		margin-top: 12rpx;
-		color: #a0a8b8;
+		color: #B9A88F;
 		font-size: 22rpx;
 		text-align: center;
 	}
 
 	.theme-dark {
-		background: linear-gradient(180deg, #0f1115 0%, #171a20 55%, #0f1115 100%);
+		background: linear-gradient(180deg, #211A14 0%, #2A211A 55%, #211A14 100%);
 	}
 
 	.theme-dark .wrap::before {
-		background: radial-gradient(circle at 50% 0, rgba(120, 120, 120, 0.18) 0, rgba(120, 120, 120, 0) 62%);
+		background: radial-gradient(circle at 50% 0, rgba(245, 166, 35, 0.14) 0, rgba(245, 166, 35, 0) 62%);
 	}
 
 	.theme-dark .wrap::after {
-		background: radial-gradient(circle at 50% 100%, rgba(90, 90, 90, 0.16) 0, rgba(90, 90, 90, 0) 68%);
+		background: radial-gradient(circle at 50% 100%, rgba(245, 166, 35, 0.10) 0, rgba(245, 166, 35, 0) 68%);
 	}
 
 	.theme-dark .logo-core,
 	.theme-dark .card {
-		background: rgba(24, 27, 33, 0.96);
+		background: rgba(48, 39, 31, 0.96);
 		box-shadow: none;
 	}
 
 	.theme-dark .welcome {
-		color: #e5e7eb;
+		color: #F5E9D9;
 	}
 
 	.theme-dark .title,
 	.theme-dark .label,
 	.theme-dark .input,
 	.theme-dark .copyright {
-		color: #f3f4f6;
+		color: #F5E9D9;
 	}
 
 	.theme-dark .subtitle,
 	.theme-dark .safety-text {
-		color: #9ca3af;
+		color: #B09A83;
 	}
 
 	.theme-dark .input-wrap {
-		border-color: #2a2f37;
-		background: #111318;
+		border-color: #3B3026;
+		background: #2A2219;
 	}
 
 	.theme-dark .input-placeholder {
-		color: #6b7280;
+		color: #8A7761;
 	}
 
 	.theme-dark .submit-btn {
-		background: linear-gradient(135deg, #2b2f36 0%, #16181d 100%);
+		background: linear-gradient(135deg, #F5A623 0%, #D9871A 100%);
 		box-shadow: none;
 	}
 </style>
