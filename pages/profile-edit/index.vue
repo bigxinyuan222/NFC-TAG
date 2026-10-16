@@ -27,29 +27,42 @@
 					<text class="field-label">部门</text>
 					<input class="field-input" :value="form.department" @input="handleInput('department', $event)" placeholder="请输入部门" placeholder-class="field-placeholder" />
 				</view>
-			</view>
 
-			<view class="form-card password-card">
-				<view class="card-title-row">
-					<text class="card-title">修改密码</text>
-				</view>
-				<view class="field">
-					<text class="field-label">原密码</text>
-					<input class="field-input" password :value="passwordForm.oldPassword" @input="handlePasswordInput('oldPassword', $event)" maxlength="128" placeholder="请输入原密码" placeholder-class="field-placeholder" />
-				</view>
-				<view class="field">
-					<text class="field-label">新密码</text>
-					<input class="field-input" password :value="passwordForm.newPassword" @input="handlePasswordInput('newPassword', $event)" maxlength="128" placeholder="请输入新密码" placeholder-class="field-placeholder" />
-				</view>
-				<view class="field">
-					<text class="field-label">确认新密码</text>
-					<input class="field-input" password :value="passwordForm.confirmPassword" @input="handlePasswordInput('confirmPassword', $event)" maxlength="128" placeholder="请再次输入新密码" placeholder-class="field-placeholder" />
-				</view>
-				<view class="password-submit" @tap="handleChangePassword">
-					<text class="password-submit-text">{{ isChangingPassword ? '提交中…' : '修改密码' }}</text>
+				<view class="field" @tap="openPasswordModal">
+					<text class="field-label">修改密码</text>
+					<view class="field-input password-entry">
+						<text class="password-entry-text">点击修改登录密码</text>
+						<image class="password-entry-arrow" src="/static/icons/menu-chevron-right.svg" mode="aspectFit" />
+					</view>
 				</view>
 			</view>
 		</scroll-view>
+
+		<view v-if="showPasswordModal" class="modal-mask" @tap="closePasswordModal">
+			<view class="modal-card" @tap.stop>
+				<text class="modal-title">修改密码</text>
+				<view class="modal-field">
+					<text class="modal-label">原密码</text>
+					<input class="modal-input" password :value="passwordForm.oldPassword" @input="handlePasswordInput('oldPassword', $event)" maxlength="128" placeholder="请输入原密码" placeholder-class="modal-placeholder" />
+				</view>
+				<view class="modal-field">
+					<text class="modal-label">新密码</text>
+					<input class="modal-input" password :value="passwordForm.newPassword" @input="handlePasswordInput('newPassword', $event)" maxlength="128" placeholder="请输入新密码" placeholder-class="modal-placeholder" />
+				</view>
+				<view class="modal-field">
+					<text class="modal-label">确认新密码</text>
+					<input class="modal-input" password :value="passwordForm.confirmPassword" @input="handlePasswordInput('confirmPassword', $event)" maxlength="128" placeholder="请再次输入新密码" placeholder-class="modal-placeholder" />
+				</view>
+				<view class="modal-actions">
+					<view class="modal-btn modal-btn-cancel" @tap="closePasswordModal">
+						<text class="modal-btn-cancel-text">取消</text>
+					</view>
+					<view class="modal-btn modal-btn-confirm" @tap="handleChangePassword">
+						<text class="modal-btn-confirm-text">{{ isChangingPassword ? '提交中…' : '确认修改' }}</text>
+					</view>
+				</view>
+			</view>
+		</view>
 	</view>
 </template>
 
@@ -73,6 +86,7 @@
 					newPassword: '',
 					confirmPassword: ''
 				},
+				showPasswordModal: false,
 				isChangingPassword: false
 			}
 		},
@@ -100,6 +114,13 @@
 			handlePasswordInput(key, event) {
 				this.passwordForm[key] = event.detail.value
 			},
+			openPasswordModal() {
+				this.showPasswordModal = true
+			},
+			closePasswordModal() {
+				if (this.isChangingPassword) return
+				this.showPasswordModal = false
+			},
 			async handleChangePassword() {
 				if (this.isChangingPassword) return
 				const oldPassword = this.passwordForm.oldPassword || ''
@@ -123,6 +144,7 @@
 				try {
 					await changePassword({ oldPassword, newPassword })
 					this.passwordForm = { oldPassword: '', newPassword: '', confirmPassword: '' }
+					this.showPasswordModal = false
 					uni.showToast({ title: '密码修改成功', icon: 'success' })
 				} catch (error) {
 					if (error && error.isAuthError) {
@@ -292,27 +314,92 @@
 		padding: 8rpx 0;
 	}
 
-	.card-title-row {
-		padding: 26rpx 28rpx 0;
-	}
-
-	.card-title {
-		color: #3D3226;
-		font-size: 28rpx;
-		font-weight: 600;
-	}
-
-	.password-submit {
-		margin: 16rpx 28rpx 28rpx;
-		height: 84rpx;
-		border-radius: 20rpx;
-		background: linear-gradient(135deg, #FFB84D 0%, #F59A23 100%);
+	.modal-mask {
+		position: fixed;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 999;
+		background: rgba(30, 22, 12, 0.5);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
 
-	.password-submit-text {
+	.modal-card {
+		width: 600rpx;
+		max-width: 88vw;
+		padding: 40rpx 32rpx 32rpx;
+		box-sizing: border-box;
+		border-radius: 32rpx;
+		background: rgba(255, 255, 255, 0.98);
+		box-shadow: 0 18rpx 50rpx rgba(60, 40, 15, 0.18);
+	}
+
+	.modal-title {
+		display: block;
+		text-align: center;
+		color: #3D3226;
+		font-size: 32rpx;
+		font-weight: 600;
+	}
+
+	.modal-field {
+		margin-top: 26rpx;
+	}
+
+	.modal-label {
+		display: block;
+		color: #7A6650;
+		font-size: 24rpx;
+		margin-bottom: 14rpx;
+	}
+
+	.modal-input {
+		height: 80rpx;
+		padding: 0 22rpx;
+		border-radius: 20rpx;
+		background: #fffaf2;
+		color: #3D3226;
+		font-size: 28rpx;
+		box-sizing: border-box;
+	}
+
+	.modal-placeholder {
+		color: #B9A88F;
+	}
+
+	.modal-actions {
+		display: flex;
+		gap: 20rpx;
+		margin-top: 36rpx;
+	}
+
+	.modal-btn {
+		flex: 1;
+		height: 84rpx;
+		border-radius: 20rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.modal-btn-cancel {
+		background: #F5EBDC;
+	}
+
+	.modal-btn-cancel-text {
+		color: #7A6650;
+		font-size: 28rpx;
+		font-weight: 600;
+	}
+
+	.modal-btn-confirm {
+		background: linear-gradient(135deg, #FFB84D 0%, #F59A23 100%);
+	}
+
+	.modal-btn-confirm-text {
 		color: #ffffff;
 		font-size: 28rpx;
 		font-weight: 600;
@@ -320,6 +407,22 @@
 
 	.field {
 		padding: 26rpx 28rpx;
+	}
+
+	.password-entry {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.password-entry-text {
+		color: #B9A88F;
+		font-size: 28rpx;
+	}
+
+	.password-entry-arrow {
+		width: 32rpx;
+		height: 32rpx;
 	}
 
 	.field + .field {
@@ -356,8 +459,31 @@
 		color: #F5E9D9;
 	}
 
-	.theme-dark .card-title {
+	.theme-dark .modal-card {
+		background: rgba(48, 39, 31, 0.98);
+		box-shadow: none;
+	}
+
+	.theme-dark .modal-title,
+	.theme-dark .modal-label,
+	.theme-dark .modal-input {
 		color: #F5E9D9;
+	}
+
+	.theme-dark .modal-input {
+		background: #2A2219;
+	}
+
+	.theme-dark .modal-placeholder {
+		color: #8A7761;
+	}
+
+	.theme-dark .modal-btn-cancel {
+		background: rgba(74, 61, 48, 0.9);
+	}
+
+	.theme-dark .modal-btn-cancel-text {
+		color: #B09A83;
 	}
 
 	.theme-dark .nav-action {
