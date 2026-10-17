@@ -1,23 +1,38 @@
 import { BASE_URL } from '@/utils/config'
+import { getToken } from '@/utils/session'
 
 const AUTH_PATHS = {
 	register: '/api/register',
-	login: '/api/login'
+	login: '/api/login',
+	changePassword: '/api/change-password'
 }
 
-function request(path, data) {
+function request(path, data, useAuth = false) {
 	const url = BASE_URL + path
+	const header = {
+		'Content-Type': 'application/json'
+	}
+
+	if (useAuth) {
+		const token = getToken()
+		if (!token) {
+			const error = new Error('登录状态已失效，请重新登录')
+			error.isAuthError = true
+			return Promise.reject(error)
+		}
+		header.Authorization = 'Bearer ' + token
+	}
+
 	return new Promise((resolve, reject) => {
 		uni.request({
 			url,
 			method: 'POST',
-			header: {
-				'Content-Type': 'application/json'
-			},
+			header,
 			data,
 			success: (response) => {
 				const body = response.data || {}
 				const message = body.msg || body.message || '请求失败'
+				const isAuthError = response.statusCode === 401 || response.statusCode === 403
 
 				if (response.statusCode < 200 || response.statusCode >= 300 || (typeof body.code === 'number' && body.code !== 0)) {
 					console.error('[认证接口响应失败]', {
@@ -25,7 +40,9 @@ function request(path, data) {
 						statusCode: response.statusCode,
 						response: body
 					})
-					reject(new Error(message))
+					const error = new Error(message)
+					error.isAuthError = isAuthError
+					reject(error)
 					return
 				}
 
@@ -48,4 +65,8 @@ export function registerAccount(data) {
 
 export function loginAccount(data) {
 	return request(AUTH_PATHS.login, data)
+}
+
+export function changePassword({ oldPassword, newPassword }) {
+	return request(AUTH_PATHS.changePassword, { oldPassword, newPassword }, true)
 }

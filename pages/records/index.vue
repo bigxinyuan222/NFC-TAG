@@ -1,5 +1,5 @@
 <template>
-	<view class="wrap" :class="currentTheme === 'dark' ? 'theme-dark' : 'theme-light'">
+	<view class="wrap">
 		<scroll-view class="scroll" scroll-y :refresher-enabled="true" :refresher-triggered="isRefreshing" @refresherrefresh="handleRefresh">
 			<view class="header-row">
 				<text class="page-title">打卡记录</text>
@@ -27,16 +27,8 @@
 						<text class="stat-label">出勤(天)</text>
 					</view>
 					<view class="stat-cell">
-						<text class="stat-num" :class="{ 'stat-warn': monthStats.lateCount > 0 }">{{ monthStats.lateCount }}</text>
-						<text class="stat-label">迟到(次)</text>
-					</view>
-					<view class="stat-cell">
-						<text class="stat-num" :class="{ 'stat-warn': monthStats.earlyLeaveCount > 0 }">{{ monthStats.earlyLeaveCount }}</text>
-						<text class="stat-label">早退(次)</text>
-					</view>
-					<view class="stat-cell">
-						<text class="stat-num" :class="{ 'stat-warn': monthStats.missCount > 0 }">{{ monthStats.missCount }}</text>
-						<text class="stat-label">缺卡(次)</text>
+						<text class="stat-num">{{ monthStats.punchCount }}</text>
+						<text class="stat-label">打卡(次)</text>
 					</view>
 				</view>
 			</view>
@@ -48,32 +40,28 @@
 					<text class="schedule-title">打卡记录</text>
 					<text class="schedule-date">{{ selectedDateText }}</text>
 				</view>
-				<view v-for="(slot, index) in checkinSlots" :key="slot.time" class="schedule-row" :class="{ 'schedule-pair-start': index > 0 && index % 2 === 0 }">
+				<view v-if="dayRecords.length === 0" class="record-empty">
+					<text class="record-empty-text">{{ isLoading ? '记录加载中…' : '当天暂无打卡记录' }}</text>
+				</view>
+				<view v-for="record in dayRecords" :key="record.id" class="schedule-row">
 					<view class="schedule-left">
-						<image class="schedule-icon" :src="getSlotIcon(index)" mode="aspectFit" />
-						<view class="schedule-info">
-							<text class="schedule-name">{{ slot.type === 'morning' ? '上班打卡' : '下班打卡' }}</text>
-							<text class="schedule-time">{{ slot.time }}</text>
-						</view>
+						<image class="schedule-icon" src="/static/icons/check-circle.svg" mode="aspectFit" />
+						<text class="schedule-name">{{ record.displayTime }}</text>
 					</view>
-					<view class="schedule-result">
-						<text class="schedule-status" :class="{ 'schedule-checked': slotMatches[index] }">{{ getSlotStatus(index) }}</text>
-						<text v-if="slotMatches[index]" class="schedule-actual-time">{{ slotMatches[index].displayTime }}</text>
-					</view>
+					<text class="schedule-status schedule-checked">已打卡</text>
 				</view>
 			</view>
 		</scroll-view>
 
-		<app-tabbar current="records" :theme="currentTheme" />
+		<app-tabbar current="records" />
 	</view>
 </template>
 
 	<script>
 	import AppTabbar from '@/components/app-tabbar/index.vue'
-	import { CHECKIN_SLOTS, getMonthlyCheckinStats, getMonthlyCheckinStatsFromRecords, getUserCheckinRecords, matchCheckinSlots, normalizeRemoteCheckinRecords } from '@/utils/checkin-record'
+	import { getUserCheckinRecords, normalizeRemoteCheckinRecords } from '@/utils/checkin-record'
 	import { getMyCheckins } from '@/api/checkin'
 	import { clearSession, getSession } from '@/utils/session'
-	import { getTheme } from '@/utils/theme'
 
 	function formatDateKey(date) {
 		const year = date.getFullYear()
@@ -104,19 +92,9 @@
 			return {
 				userName: '',
 				department: '',
-				currentTheme: 'light',
 				selectedDateKey: '',
 				selectedDateText: '',
 				selectedWeekText: '',
-				checkinSlots: CHECKIN_SLOTS,
-				slotMatches: [],
-				monthStats: {
-					attendDays: 0,
-					lateCount: 0,
-					earlyLeaveCount: 0,
-					missCount: 0,
-					monthText: ''
-				},
 				recordList: [],
 				recordSource: '',
 				remoteRecords: [],
@@ -126,19 +104,34 @@
 				remoteComplete: false,
 				isLoading: false,
 				isRefreshing: false,
-				nowTime: Date.now(),
 				requestVersion: 0,
 				errorMessage: ''
 			}
 		},
+		computed: {
+			dayRecords() {
+				return (this.recordList || [])
+					.filter((record) => record.status === 'success' && record.dateKey === this.selectedDateKey)
+					.sort((left, right) => right.time - left.time)
+			},
+			monthStats() {
+				const monthPrefix = this.selectedDateKey ? this.selectedDateKey.slice(0, 7) + '-' : ''
+				const records = (this.recordList || []).filter((record) => (
+					record.status === 'success' && monthPrefix && record.dateKey && record.dateKey.indexOf(monthPrefix) === 0
+				))
+				const dayMap = {}
+				records.forEach((record) => { dayMap[record.dateKey] = true })
+				return {
+					attendDays: Object.keys(dayMap).length,
+					punchCount: records.length,
+					monthText: monthPrefix ? Number(this.selectedDateKey.slice(5, 7)) + '月' : ''
+				}
+			}
+		},
 		onShow() {
-			this.nowTime = Date.now()
-			clearInterval(this.statusTimer)
-			this.statusTimer = setInterval(() => { this.nowTime = Date.now() }, 1000)
 			const { userName, department } = getSession()
 			this.userName = userName
 			this.department = department
-			this.currentTheme = getTheme()
 
 			if (!this.userName || !this.department) {
 				this.requestVersion++
@@ -149,27 +142,7 @@
 
 			this.loadRecords()
 		},
-		onHide() {
-			clearInterval(this.statusTimer)
-		},
-		onUnload() {
-			clearInterval(this.statusTimer)
-		},
 		methods: {
-			getSlotIcon(index) {
-				return this.slotMatches[index] ? '/static/icons/check-circle.svg' : '/static/icons/clock.svg'
-			},
-			isSlotPending(index) {
-				if (!this.selectedDateKey) return false
-				const parts = this.selectedDateKey.split('-').map(Number)
-				const clock = this.checkinSlots[index].time.split(':').map(Number)
-				return this.nowTime <= new Date(parts[0], parts[1] - 1, parts[2], clock[0], clock[1]).getTime()
-			},
-			getSlotStatus(index) {
-				if (this.slotMatches[index]) return '已打卡'
-				if (this.isLoading || (this.recordSource === 'remote' && !this.remoteComplete)) return '待确认'
-				return this.isSlotPending(index) ? '待打卡' : '未打卡'
-			},
 			goLogin() {
 				uni.reLaunch({
 					url: '/pages/login/index'
@@ -242,10 +215,6 @@
 				const date = parseDateKey(this.selectedDateKey)
 				this.selectedDateText = getDisplayDateText(date)
 				this.selectedWeekText = getWeekText(date)
-				this.slotMatches = matchCheckinSlots(this.recordList, this.selectedDateKey, this.checkinSlots)
-				this.monthStats = this.recordSource === 'remote'
-					? getMonthlyCheckinStatsFromRecords(this.recordList, date, { canCalculateMissing: false })
-					: getMonthlyCheckinStats({ userName: this.userName, department: this.department }, date)
 			},
 			handleDateChange(event) {
 				this.selectedDateKey = event.detail.value
@@ -270,58 +239,6 @@
 		height: 100vh;
 		height: 100dvh;
 		background: linear-gradient(180deg, #FFF9EF 0%, #FDF3E4 60%, #FBEDD9 100%);
-	}
-
-	.theme-dark {
-		background: linear-gradient(180deg, #211A14 0%, #2A211A 55%, #211A14 100%);
-	}
-
-	.theme-dark .page-title,
-	.theme-dark .stats-title,
-	.theme-dark .stat-num,
-	.theme-dark .schedule-title,
-	.theme-dark .schedule-name {
-		color: #F5E9D9;
-	}
-
-	.theme-dark .stat-primary {
-		color: #F5A623;
-	}
-
-	.theme-dark .stat-warn {
-		color: #E8A45C;
-	}
-
-	.theme-dark .date-text,
-	.theme-dark .stat-label,
-	.theme-dark .schedule-date,
-	.theme-dark .schedule-time,
-	.theme-dark .schedule-status {
-		color: #B09A83;
-	}
-
-	.theme-dark .source-message,
-	.theme-dark .load-message {
-		color: #B09A83;
-	}
-
-	.theme-dark .date-bar,
-	.theme-dark .stats-card,
-	.theme-dark .schedule-card {
-		background: rgba(48, 39, 31, 0.96);
-		box-shadow: none;
-	}
-
-	.theme-dark .schedule-row {
-		border-color: #3B3026;
-	}
-
-	.theme-dark .schedule-checked {
-		color: #F5A623;
-	}
-
-	.theme-dark .schedule-late {
-		color: #e8a45c;
 	}
 
 	.scroll {
@@ -415,10 +332,6 @@
 		color: #F59A23;
 	}
 
-	.stat-warn {
-		color: #e08838;
-	}
-
 	.stat-label {
 		color: #A08C77;
 		font-size: 21rpx;
@@ -495,10 +408,6 @@
 		border-top: 1rpx solid #F2E7D5;
 	}
 
-	.schedule-row.schedule-pair-start {
-		border-top-style: dashed;
-	}
-
 	.schedule-left {
 		gap: 16rpx;
 		min-width: 0;
@@ -510,31 +419,15 @@
 		flex-shrink: 0;
 	}
 
-	.schedule-info {
-		display: flex;
-		flex-direction: column;
-		gap: 6rpx;
-	}
-
 	.schedule-name {
 		color: #3D3226;
 		font-size: 26rpx;
 		font-weight: 600;
 	}
 
-	.schedule-time,
-	.schedule-status,
-	.schedule-actual-time {
+	.schedule-status {
 		color: #A08C77;
 		font-size: 23rpx;
-	}
-
-	.schedule-result {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-end;
-		flex-shrink: 0;
-		gap: 6rpx;
 	}
 
 	.schedule-checked {
@@ -542,9 +435,16 @@
 		font-weight: 600;
 	}
 
-	.schedule-late {
-		color: #e08838;
-		font-weight: 600;
+	.record-empty {
+		min-height: 130rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.record-empty-text {
+		color: #A08C77;
+		font-size: 23rpx;
 	}
 
 	.source-message {

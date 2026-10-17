@@ -1,5 +1,5 @@
 <template>
-	<view class="wrap" :class="currentTheme === 'dark' ? 'theme-dark' : 'theme-light'">
+	<view class="wrap">
 		<view class="nav-bar">
 			<view class="nav-back" @tap="goBack">
 				<image class="nav-icon" src="/static/icons/chevron-left.svg" mode="aspectFit" />
@@ -17,16 +17,13 @@
 </template>
 
 <script>
-	import { getTheme } from '@/utils/theme'
 
 	export default {
 		data() {
 			return {
-				currentTheme: 'light'
 			}
 		},
 		onShow() {
-			this.currentTheme = getTheme()
 		},
 		methods: {
 			goBack() {
@@ -108,21 +105,4 @@
 		line-height: 1.7;
 	}
 
-	.theme-dark {
-		background: linear-gradient(180deg, #211A14 0%, #2A211A 55%, #211A14 100%);
-	}
-
-	.theme-dark .nav-title,
-	.theme-dark .brand {
-		color: #F5E9D9;
-	}
-
-	.theme-dark .about-card {
-		background: rgba(48, 39, 31, 0.96);
-		box-shadow: none;
-	}
-
-	.theme-dark .desc {
-		color: #C9B8A2;
-	}
 </style>

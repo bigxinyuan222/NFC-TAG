@@ -1,5 +1,5 @@
 <template>
-	<view class="tabbar" :class="theme === 'dark' ? 'theme-dark' : ''">
+	<view class="tabbar">
 		<view class="tab-item" :class="{ active: current === 'checkin' }" @tap="switchTab('checkin')">
 			<image class="tab-icon" :src="getIcon('checkin')" mode="aspectFit" />
 			<text class="tab-label">首页</text>
@@ -27,10 +27,6 @@
 			current: {
 				type: String,
 				default: 'checkin'
-			},
-			theme: {
-				type: String,
-				default: 'light'
 			}
 		},
 		methods: {
@@ -94,16 +90,4 @@
 		line-height: 1;
 	}
 
-	.tabbar.theme-dark {
-		background: rgba(42, 34, 27, 0.98);
-		box-shadow: 0 -8rpx 20rpx rgba(0, 0, 0, 0.40);
-	}
-
-	.tabbar.theme-dark .tab-item {
-		color: #9C8873;
-	}
-
-	.tabbar.theme-dark .tab-item.active {
-		color: #F5A623;
-	}
 </style>

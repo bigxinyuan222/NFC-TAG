@@ -1,15 +1,8 @@
 <template>
-	<view class="wrap" :class="currentTheme === 'dark' ? 'theme-dark' : 'theme-light'">
+	<view class="wrap">
 		<view class="main-shell">
 			<view class="hero">
-				<view class="logo-shell">
-					<view class="logo-core">
-						<image class="logo-img" src="/static/app-icon.png" mode="aspectFit" />
-					</view>
-				</view>
-				<text class="welcome">欢迎使用</text>
-				<text class="title">喵呜打卡</text>
-				<text class="subtitle">打卡不枯燥，和可爱一起变优秀！</text>
+				<image class="hero-img" src="/static/login-hero.png" mode="widthFix" />
 			</view>
 
 			<view class="card">
@@ -67,12 +60,10 @@
 <script>
 	import { getSession, hasSession, saveSession } from '@/utils/session'
 	import { registerAccount, loginAccount } from '@/api/auth'
-	import { getTheme } from '@/utils/theme'
 
 	export default {
 		data() {
 			return {
-				currentTheme: 'light',
 				form: {
 					userName: '',
 					department: '',
@@ -85,7 +76,6 @@
 			}
 		},
 			onShow() {
-			this.currentTheme = getTheme()
 			if (hasSession()) {
 				this.goCheckin()
 				return
@@ -320,51 +310,10 @@
 		text-align: center;
 	}
 
-	.logo-shell {
-		display: flex;
-		justify-content: center;
-	}
-
-	.logo-core {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 150rpx;
-		height: 150rpx;
-		border-radius: 36rpx;
-		overflow: hidden;
-		background: rgba(255, 255, 255, 0.96);
-		box-shadow: 0 18rpx 50rpx rgba(212, 162, 94, 0.22);
-	}
-
-	.logo-img {
-		width: 150rpx;
-		height: 150rpx;
-	}
-
-	.welcome {
+	.hero-img {
 		display: block;
-		margin-top: 24rpx;
-		color: #6B573F;
-		font-size: 44rpx;
-		font-weight: 700;
-		line-height: 1.25;
-	}
-
-	.title {
-		display: block;
-		margin-top: 8rpx;
-		color: #F59A23;
-		font-size: 50rpx;
-		font-weight: 700;
-		line-height: 1.18;
-	}
-
-	.subtitle {
-		display: block;
-		margin-top: 14rpx;
-		color: #A08C77;
-		font-size: 22rpx;
+		width: 460rpx;
+		margin: 0 auto;
 	}
 
 	.card {
@@ -507,51 +456,4 @@
 		text-align: center;
 	}
 
-	.theme-dark {
-		background: linear-gradient(180deg, #211A14 0%, #2A211A 55%, #211A14 100%);
-	}
-
-	.theme-dark .wrap::before {
-		background: radial-gradient(circle at 50% 0, rgba(245, 166, 35, 0.14) 0, rgba(245, 166, 35, 0) 62%);
-	}
-
-	.theme-dark .wrap::after {
-		background: radial-gradient(circle at 50% 100%, rgba(245, 166, 35, 0.10) 0, rgba(245, 166, 35, 0) 68%);
-	}
-
-	.theme-dark .logo-core,
-	.theme-dark .card {
-		background: rgba(48, 39, 31, 0.96);
-		box-shadow: none;
-	}
-
-	.theme-dark .welcome {
-		color: #F5E9D9;
-	}
-
-	.theme-dark .title,
-	.theme-dark .label,
-	.theme-dark .input,
-	.theme-dark .copyright {
-		color: #F5E9D9;
-	}
-
-	.theme-dark .subtitle,
-	.theme-dark .safety-text {
-		color: #B09A83;
-	}
-
-	.theme-dark .input-wrap {
-		border-color: #3B3026;
-		background: #2A2219;
-	}
-
-	.theme-dark .input-placeholder {
-		color: #8A7761;
-	}
-
-	.theme-dark .submit-btn {
-		background: linear-gradient(135deg, #F5A623 0%, #D9871A 100%);
-		box-shadow: none;
-	}
 </style>

@@ -1,5 +1,5 @@
 <template>
-	<view class="wrap" :class="currentTheme === 'dark' ? 'theme-dark' : 'theme-light'">
+	<view class="wrap">
 		<view class="screen-shell">
 			<view class="hero-row">
 				<view class="hero-text">
@@ -25,12 +25,14 @@
 				<view class="pulse-wrap">
 					<view class="pulse-ring pulse-ring-outer"></view>
 					<view class="pulse-ring pulse-ring-inner"></view>
+					<image class="pulse-cat" src="/static/cat-hug.png" mode="aspectFit" />
 					<view class="pulse-core">
 						<view class="pulse-icon">
 							<image class="pulse-wave" src="/static/icons/checkin-wave.svg" mode="aspectFit" />
 						</view>
 					<text class="pulse-label">{{ requiresNfcRescan ? '请再次碰卡验证' : '碰一下打卡' }}</text>
 					</view>
+					<image class="pulse-cat-paws" src="/static/cat-hug-paws.png" mode="aspectFit" />
 				</view>
 
 				<view class="tip-row">
@@ -55,7 +57,7 @@
 			</view>
 		</view>
 
-		<app-tabbar current="checkin" :theme="currentTheme" />
+		<app-tabbar current="checkin" />
 
 		<checkin-result
 			:visible="resultVisible"
@@ -72,11 +74,10 @@
 	import AppTabbar from '@/components/app-tabbar/index.vue'
 	import CheckinResult from '@/components/checkin-result/index.vue'
 	import { clearSession, consumeNfcRescanRequired, consumePendingNfcTag, getSession, hasSession } from '@/utils/session'
-	import { getTodayCheckinSummary, saveCheckinRecord } from '@/utils/checkin-record'
+	import { getCheckinWindowStatus, getTodayCheckinSummary, saveCheckinRecord } from '@/utils/checkin-record'
 	import { submitCheckin as submitCheckinRequest } from '@/api/checkin'
 	import { NFC_CHECKIN_POINT_ID } from '@/utils/nfc-config'
 	import { releaseNfcSubmissionLock } from '@/utils/nfc-checkin'
-	import { getTheme } from '@/utils/theme'
 	import { formatClockTime, formatDateText } from '@/utils/time'
 
 	export default {
@@ -90,7 +91,6 @@
 				department: '',
 				avatarUrl: '',
 				avatarLoadFailed: false,
-				currentTheme: 'light',
 				timeText: '',
 				dateText: '',
 				summaryDateKey: '',
@@ -115,7 +115,6 @@
 			this.department = department
 				this.avatarUrl = avatarUrl
 				this.avatarLoadFailed = false
-			this.currentTheme = getTheme()
 
 			if (!hasSession()) {
 				clearSession()
@@ -136,14 +135,21 @@
 					}
 				}, 350)
 			}
+			uni.$on('checkin-window-denied', this.handleCheckinDenied)
+			if (uni.getStorageSync('pendingCheckinDenied')) {
+				uni.removeStorageSync('pendingCheckinDenied')
+				this.handleCheckinDenied()
+			}
 		},
 		onHide() {
 			this.pageVisible = false
 			this.stopClock()
+			uni.$off('checkin-window-denied', this.handleCheckinDenied)
 		},
 		onUnload() {
 			this.pageVisible = false
 			this.stopClock()
+			uni.$off('checkin-window-denied', this.handleCheckinDenied)
 		},
 		methods: {
 			goLogin() {
@@ -155,6 +161,15 @@
 				uni.reLaunch({
 					url: '/pages/records/index'
 				})
+			},
+			handleCheckinDenied() {
+				this.result = {
+					success: false,
+					message: '不在打卡时间范围内',
+					pointId: '',
+					timeText: ''
+				}
+				this.resultVisible = true
 			},
 			refreshClock() {
 				const now = new Date()
@@ -192,6 +207,12 @@
 					return
 				}
 				this.requiresNfcRescan = false
+				const windowStatus = getCheckinWindowStatus()
+				if (!windowStatus.allowed) {
+					releaseNfcSubmissionLock()
+					this.handleCheckinDenied()
+					return
+				}
 				this.submitCheckin({
 					message: '正在提交打卡',
 					pointId: NFC_CHECKIN_POINT_ID,
@@ -208,8 +229,8 @@
 
 				try {
 					if (!payload.pointId) {
-						throw new Error('未识别到有效的打卡点')
-					}
+					throw new Error('未识别到有效的打卡点，喵')
+				}
 
 					const result = await submitCheckinRequest({
 						pointId: payload.pointId,
@@ -233,7 +254,7 @@
 						})
 					}
 				} catch (e) {
-					message = e && (e.message || e.errMsg) ? (e.message || e.errMsg) : '网络失败'
+				message = e && (e.message || e.errMsg) ? (e.message || e.errMsg) : '网络失败，喵'
 					console.error('[打卡失败原因]', message)
 					console.error('[打卡失败]', {
 						pointId: payload.pointId || '',
@@ -247,7 +268,7 @@
 				this.result = {
 					success,
 					message,
-					pointId: payload.pointId || '',
+					pointId: '',
 					timeText: displayTime
 				}
 
@@ -385,34 +406,8 @@
 		background: #F59A23;
 	}
 
-	.theme-dark {
-		background: linear-gradient(180deg, #211A14 0%, #2A211A 55%, #211A14 100%);
-	}
-
-	.theme-dark .title,
-	.theme-dark .time-text,
-	.theme-dark .records-title,
-	.theme-dark .record-label,
-	.theme-dark .record-value {
-		color: #F5E9D9;
-	}
-
-	.theme-dark .subtitle,
-	.theme-dark .date-text,
-	.theme-dark .tip,
-	.theme-dark .records-side,
-	.theme-dark .muted-text {
-		color: #B09A83;
-	}
-
-	.theme-dark .card,
-	.theme-dark .avatar {
-		background: rgba(48, 39, 31, 0.96);
-		box-shadow: none;
-	}
-
 	.center-panel {
-		margin-top: 66rpx;
+		margin-top: 48rpx;
 		text-align: center;
 		flex-shrink: 0;
 	}
@@ -438,12 +433,32 @@
 		justify-content: center;
 		width: 500rpx;
 		height: 500rpx;
-		margin: 30rpx auto 0;
+		margin: 92rpx auto 0;
 	}
 
 	.pulse-ring {
 		position: absolute;
+		z-index: 0;
 		border-radius: 50%;
+	}
+
+	/* 小猫从圆形卡片上方探身，双爪搭在圆形上边缘：全身层在卡片后，爪子层在卡片前 */
+	.pulse-cat,
+	.pulse-cat-paws {
+		position: absolute;
+		left: 100rpx;
+		top: -150rpx;
+		width: 300rpx;
+		height: 321rpx;
+		pointer-events: none;
+	}
+
+	.pulse-cat {
+		z-index: 1;
+	}
+
+	.pulse-cat-paws {
+		z-index: 3;
 	}
 
 	.pulse-ring-outer {
@@ -460,12 +475,15 @@
 
 	.pulse-core {
 		position: relative;
+		z-index: 2;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		justify-content: center;
+		justify-content: flex-start;
+		box-sizing: border-box;
 		width: 308rpx;
 		height: 308rpx;
+		padding-top: 48rpx;
 		border-radius: 50%;
 		background: linear-gradient(180deg, #FFB84D 0%, #F59A23 100%);
 		box-shadow: 0 18rpx 44rpx rgba(245, 154, 35, 0.28);
@@ -479,12 +497,12 @@
 	}
 
 	.pulse-wave {
-		width: 132rpx;
-		height: 132rpx;
+		width: 92rpx;
+		height: 92rpx;
 	}
 
 	.pulse-label {
-		margin-top: 16rpx;
+		margin-top: 8rpx;
 		color: #ffffff;
 		font-size: 34rpx;
 		font-weight: 600;
@@ -513,7 +531,7 @@
 	}
 
 	.card {
-		margin-top: 100rpx;
+		margin-top: 60rpx;
 		padding: 22rpx 22rpx 28rpx;
 		border-radius: 30rpx;
 		background: rgba(255, 255, 255, 0.96);

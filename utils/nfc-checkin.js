@@ -7,7 +7,7 @@ let lastScanTime = 0
 let submissionLocked = false
 let submissionLockTimer = null
 
-const SCAN_DEBOUNCE_MS = 2500
+const SCAN_DEBOUNCE_MS = 1000
 const SUBMISSION_LOCK_TIMEOUT_MS = 30000
 
 export function acquireNfcSubmissionLock() {
@@ -33,8 +33,6 @@ function getAndroidNfc() {
 	if (!adapter) return { error: '当前设备不支持 NFC' }
 	if (!adapter.isEnabled()) return { error: '请先在系统设置中开启 NFC' }
 	return { activity, adapter, NfcAdapter }
-	// #endif
-	return { error: '当前平台不支持 NFC 读卡' }
 }
 
 function clearCurrentIntent(activity) {
@@ -42,7 +40,8 @@ function clearCurrentIntent(activity) {
 	activity.setIntent(new Intent())
 }
 
-function readCurrentTag() {
+export function readTagFromCurrentIntent() {
+	// #ifdef APP-PLUS
 	const state = getAndroidNfc()
 	if (state.error) return null
 	const intent = state.activity.getIntent()
@@ -65,6 +64,10 @@ function readCurrentTag() {
 		uid += (Number(bytes[index]) & 0xff).toString(16).padStart(2, '0')
 	}
 	return uid.toUpperCase()
+}
+
+function readCurrentTag() {
+	return readTagFromCurrentIntent()
 }
 
 function dispatchCurrentTag() {
@@ -102,8 +105,6 @@ export function startNfcScan(handler) {
 	plus.globalEvent.addEventListener('newintent', handleNewIntent)
 	setTimeout(dispatchCurrentTag, 100)
 	return { supported: true }
-	// #endif
-	return { error: '当前平台不支持 NFC 读卡' }
 }
 
 export function stopNfcScan() {
