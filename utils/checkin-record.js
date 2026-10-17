@@ -106,6 +106,17 @@ function parseRecordTime(value) {
 	if (typeof value === 'number') {
 		return new Date(value < 100000000000 ? value * 1000 : value)
 	}
+	if (typeof value === 'string' && value) {
+		// "yyyy-MM-dd HH:mm:ss" 格式在 iOS 上无法被 new Date 解析，
+		// 无时区标识时按本地时间手动解析；带时区的 ISO 字符串走原生解析
+		const match = /^(\d{4})-(\d{1,2})-(\d{1,2})[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/.exec(value)
+		if (match) {
+			return new Date(
+				Number(match[1]), Number(match[2]) - 1, Number(match[3]),
+				Number(match[4]), Number(match[5]), Number(match[6] || 0)
+			)
+		}
+	}
 	return new Date(value)
 }
 
