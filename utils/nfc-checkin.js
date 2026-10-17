@@ -42,7 +42,8 @@ function clearCurrentIntent(activity) {
 	activity.setIntent(new Intent())
 }
 
-function readCurrentTag() {
+export function readTagFromCurrentIntent() {
+	// #ifdef APP-PLUS
 	const state = getAndroidNfc()
 	if (state.error) return null
 	const intent = state.activity.getIntent()
@@ -65,6 +66,12 @@ function readCurrentTag() {
 		uid += (Number(bytes[index]) & 0xff).toString(16).padStart(2, '0')
 	}
 	return uid.toUpperCase()
+	// #endif
+	return null
+}
+
+function readCurrentTag() {
+	return readTagFromCurrentIntent()
 }
 
 function dispatchCurrentTag() {
