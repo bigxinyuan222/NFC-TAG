@@ -54,7 +54,6 @@
 					{ key: 'profile', label: '个人信息', icon: '/static/icons/user.svg' },
 					{ key: 'security', label: '账号与安全', icon: '/static/icons/shield.svg' },
 					{ key: 'setting', label: '系统设置', icon: '/static/icons/settings.svg' },
-					{ key: 'help', label: '帮助与反馈', icon: '/static/icons/help.svg' },
 					{ key: 'about', label: '关于我们', icon: '/static/icons/info.svg' }
 				]
 			}
@@ -97,13 +96,6 @@
 				if (item.key === 'about') {
 					uni.navigateTo({
 						url: '/pages/about/index'
-					})
-					return
-				}
-
-				if (item.key === 'help') {
-					uni.navigateTo({
-						url: '/pages/help/index'
 					})
 					return
 				}

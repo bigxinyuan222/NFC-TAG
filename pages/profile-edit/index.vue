@@ -20,12 +20,20 @@
 			<view class="form-card">
 				<view class="field">
 					<text class="field-label">姓名</text>
-					<input class="field-input" :value="form.userName" @input="handleInput('userName', $event)" placeholder="请输入姓名" placeholder-class="field-placeholder" />
+					<view class="field-input readonly-field">
+						<text class="readonly-text">{{ form.userName }}</text>
+						<text class="readonly-tip">不可修改</text>
+					</view>
 				</view>
 
 				<view class="field">
 					<text class="field-label">部门</text>
-					<input class="field-input" :value="form.department" @input="handleInput('department', $event)" placeholder="请输入部门" placeholder-class="field-placeholder" />
+					<picker class="department-picker" mode="selector" :range="departmentOptions" :value="departmentIndex" @change="handleDepartmentChange">
+						<view class="field-input picker-wrap">
+							<text class="department-value" :class="{ 'field-placeholder': !form.department }">{{ form.department || '请选择部门' }}</text>
+							<image class="picker-arrow" src="/static/icons/chevron-right.svg" mode="aspectFit" />
+						</view>
+					</picker>
 				</view>
 
 				<view class="field" @tap="openPasswordModal">
@@ -81,6 +89,8 @@
 					department: '',
 					avatarUrl: ''
 				},
+				departmentOptions: ['27鹰飞', '26鹰飞', '全栈二期', 'ROS机器人'],
+				departmentIndex: 0,
 				passwordForm: {
 					oldPassword: '',
 					newPassword: '',
@@ -97,6 +107,8 @@
 			this.form.userName = userName
 			this.form.department = department
 			this.form.avatarUrl = avatarUrl
+			const departmentIndex = this.departmentOptions.indexOf(department)
+			this.departmentIndex = departmentIndex >= 0 ? departmentIndex : 0
 		},
 		methods: {
 			goBack() {
@@ -108,8 +120,10 @@
 					}
 				})
 			},
-			handleInput(key, event) {
-				this.form[key] = event.detail.value
+			handleDepartmentChange(event) {
+				const index = Number(event.detail.value)
+				this.departmentIndex = index
+				this.form.department = this.departmentOptions[index] || ''
 			},
 			handlePasswordInput(key, event) {
 				this.passwordForm[key] = event.detail.value
@@ -446,6 +460,38 @@
 		box-sizing: border-box;
 	}
 
+	.readonly-field {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.readonly-text {
+		color: #3D3226;
+		font-size: 28rpx;
+	}
+
+	.readonly-tip {
+		color: #B9A88F;
+		font-size: 24rpx;
+	}
+
+	.picker-wrap {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.department-value {
+		font-size: 28rpx;
+	}
+
+	.picker-arrow {
+		width: 32rpx;
+		height: 32rpx;
+		flex-shrink: 0;
+	}
+
 	.field-placeholder {
 		color: #B9A88F;
 	}
@@ -511,5 +557,13 @@
 
 	.theme-dark .field-placeholder {
 		color: #8A7761;
+	}
+
+	.theme-dark .readonly-text {
+		color: #F5E9D9;
+	}
+
+	.theme-dark .readonly-tip {
+		color: #B09A83;
 	}
 </style>
