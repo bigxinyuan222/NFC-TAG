@@ -74,7 +74,7 @@
 	import AppTabbar from '@/components/app-tabbar/index.vue'
 	import CheckinResult from '@/components/checkin-result/index.vue'
 	import { clearSession, consumeNfcRescanRequired, consumePendingNfcTag, getSession, hasSession } from '@/utils/session'
-	import { getTodayCheckinSummary, saveCheckinRecord } from '@/utils/checkin-record'
+	import { getCheckinWindowStatus, getTodayCheckinSummary, saveCheckinRecord } from '@/utils/checkin-record'
 	import { submitCheckin as submitCheckinRequest } from '@/api/checkin'
 	import { NFC_CHECKIN_POINT_ID } from '@/utils/nfc-config'
 	import { releaseNfcSubmissionLock } from '@/utils/nfc-checkin'
@@ -135,14 +135,21 @@
 					}
 				}, 350)
 			}
+			uni.$on('checkin-window-denied', this.handleCheckinDenied)
+			if (uni.getStorageSync('pendingCheckinDenied')) {
+				uni.removeStorageSync('pendingCheckinDenied')
+				this.handleCheckinDenied()
+			}
 		},
 		onHide() {
 			this.pageVisible = false
 			this.stopClock()
+			uni.$off('checkin-window-denied', this.handleCheckinDenied)
 		},
 		onUnload() {
 			this.pageVisible = false
 			this.stopClock()
+			uni.$off('checkin-window-denied', this.handleCheckinDenied)
 		},
 		methods: {
 			goLogin() {
@@ -154,6 +161,15 @@
 				uni.reLaunch({
 					url: '/pages/records/index'
 				})
+			},
+			handleCheckinDenied() {
+				this.result = {
+					success: false,
+					message: '不在打卡时间范围内',
+					pointId: '',
+					timeText: ''
+				}
+				this.resultVisible = true
 			},
 			refreshClock() {
 				const now = new Date()
@@ -191,6 +207,12 @@
 					return
 				}
 				this.requiresNfcRescan = false
+				const windowStatus = getCheckinWindowStatus()
+				if (!windowStatus.allowed) {
+					releaseNfcSubmissionLock()
+					this.handleCheckinDenied()
+					return
+				}
 				this.submitCheckin({
 					message: '正在提交打卡',
 					pointId: NFC_CHECKIN_POINT_ID,
@@ -246,7 +268,7 @@
 				this.result = {
 					success,
 					message,
-					pointId: payload.pointId || '',
+					pointId: '',
 					timeText: displayTime
 				}
 

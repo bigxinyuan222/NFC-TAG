@@ -20,20 +20,63 @@
 			<view class="form-card">
 				<view class="field">
 					<text class="field-label">姓名</text>
-					<input class="field-input" :value="form.userName" @input="handleInput('userName', $event)" placeholder="请输入姓名" placeholder-class="field-placeholder" />
+					<view class="field-input readonly-field">
+						<text class="readonly-text">{{ form.userName }}</text>
+						<text class="readonly-tip">不可修改</text>
+					</view>
 				</view>
 
 				<view class="field">
 					<text class="field-label">部门</text>
-					<input class="field-input" :value="form.department" @input="handleInput('department', $event)" placeholder="请输入部门" placeholder-class="field-placeholder" />
+					<picker class="department-picker" mode="selector" :range="departmentOptions" :value="departmentIndex" @change="handleDepartmentChange">
+						<view class="field-input picker-wrap">
+							<text class="department-value" :class="{ 'field-placeholder': !form.department }">{{ form.department || '请选择部门' }}</text>
+							<image class="picker-arrow" src="/static/icons/chevron-right.svg" mode="aspectFit" />
+						</view>
+					</picker>
+				</view>
+
+				<view class="field" @tap="openPasswordModal">
+					<text class="field-label">修改密码</text>
+					<view class="field-input password-entry">
+						<text class="password-entry-text">点击修改登录密码</text>
+						<image class="password-entry-arrow" src="/static/icons/menu-chevron-right.svg" mode="aspectFit" />
+					</view>
 				</view>
 			</view>
 		</scroll-view>
+
+		<view v-if="showPasswordModal" class="modal-mask" @tap="closePasswordModal">
+			<view class="modal-card" @tap.stop>
+				<text class="modal-title">修改密码</text>
+				<view class="modal-field">
+					<text class="modal-label">原密码</text>
+					<input class="modal-input" password :value="passwordForm.oldPassword" @input="handlePasswordInput('oldPassword', $event)" maxlength="128" placeholder="请输入原密码" placeholder-class="modal-placeholder" />
+				</view>
+				<view class="modal-field">
+					<text class="modal-label">新密码</text>
+					<input class="modal-input" password :value="passwordForm.newPassword" @input="handlePasswordInput('newPassword', $event)" maxlength="128" placeholder="请输入新密码" placeholder-class="modal-placeholder" />
+				</view>
+				<view class="modal-field">
+					<text class="modal-label">确认新密码</text>
+					<input class="modal-input" password :value="passwordForm.confirmPassword" @input="handlePasswordInput('confirmPassword', $event)" maxlength="128" placeholder="请再次输入新密码" placeholder-class="modal-placeholder" />
+				</view>
+				<view class="modal-actions">
+					<view class="modal-btn modal-btn-cancel" @tap="closePasswordModal">
+						<text class="modal-btn-cancel-text">取消</text>
+					</view>
+					<view class="modal-btn modal-btn-confirm" @tap="handleChangePassword">
+						<text class="modal-btn-confirm-text">{{ isChangingPassword ? '提交中…' : '确认修改' }}</text>
+					</view>
+				</view>
+			</view>
+		</view>
 	</view>
 </template>
 
 <script>
-	import { getSession, saveSession } from '@/utils/session'
+	import { changePassword } from '@/api/auth'
+	import { clearSession, getSession, saveSession } from '@/utils/session'
 
 	export default {
 		data() {
@@ -43,7 +86,16 @@
 					userName: '',
 					department: '',
 					avatarUrl: ''
-				}
+				},
+				departmentOptions: ['27鹰飞', '26鹰飞', '全栈二期', 'ROS机器人'],
+				departmentIndex: 0,
+				passwordForm: {
+					oldPassword: '',
+					newPassword: '',
+					confirmPassword: ''
+				},
+				showPasswordModal: false,
+				isChangingPassword: false
 			}
 		},
 		onShow() {
@@ -52,6 +104,8 @@
 			this.form.userName = userName
 			this.form.department = department
 			this.form.avatarUrl = avatarUrl
+			const departmentIndex = this.departmentOptions.indexOf(department)
+			this.departmentIndex = departmentIndex >= 0 ? departmentIndex : 0
 		},
 		methods: {
 			goBack() {
@@ -63,8 +117,56 @@
 					}
 				})
 			},
-			handleInput(key, event) {
-				this.form[key] = event.detail.value
+			handleDepartmentChange(event) {
+				const index = Number(event.detail.value)
+				this.departmentIndex = index
+				this.form.department = this.departmentOptions[index] || ''
+			},
+			handlePasswordInput(key, event) {
+				this.passwordForm[key] = event.detail.value
+			},
+			openPasswordModal() {
+				this.showPasswordModal = true
+			},
+			closePasswordModal() {
+				if (this.isChangingPassword) return
+				this.showPasswordModal = false
+			},
+			async handleChangePassword() {
+				if (this.isChangingPassword) return
+				const oldPassword = this.passwordForm.oldPassword || ''
+				const newPassword = this.passwordForm.newPassword || ''
+				const confirmPassword = this.passwordForm.confirmPassword || ''
+
+				if (!oldPassword || !newPassword || !confirmPassword) {
+					uni.showToast({ title: '请填写完整密码信息', icon: 'none' })
+					return
+				}
+				if (newPassword === oldPassword) {
+					uni.showToast({ title: '新密码不能与旧密码相同', icon: 'none' })
+					return
+				}
+				if (newPassword !== confirmPassword) {
+					uni.showToast({ title: '两次输入的新密码不一致', icon: 'none' })
+					return
+				}
+
+				this.isChangingPassword = true
+				try {
+					await changePassword({ oldPassword, newPassword })
+					this.passwordForm = { oldPassword: '', newPassword: '', confirmPassword: '' }
+					this.showPasswordModal = false
+					uni.showToast({ title: '密码修改成功', icon: 'success' })
+				} catch (error) {
+					if (error && error.isAuthError) {
+						clearSession()
+						uni.reLaunch({ url: '/pages/login/index' })
+						return
+					}
+					uni.showToast({ title: (error && error.message) || '密码修改失败', icon: 'none' })
+				} finally {
+					this.isChangingPassword = false
+				}
 			},
 			chooseAvatar() {
 				uni.chooseImage({
@@ -223,8 +325,115 @@
 		padding: 8rpx 0;
 	}
 
+	.modal-mask {
+		position: fixed;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 999;
+		background: rgba(30, 22, 12, 0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.modal-card {
+		width: 600rpx;
+		max-width: 88vw;
+		padding: 40rpx 32rpx 32rpx;
+		box-sizing: border-box;
+		border-radius: 32rpx;
+		background: rgba(255, 255, 255, 0.98);
+		box-shadow: 0 18rpx 50rpx rgba(60, 40, 15, 0.18);
+	}
+
+	.modal-title {
+		display: block;
+		text-align: center;
+		color: #3D3226;
+		font-size: 32rpx;
+		font-weight: 600;
+	}
+
+	.modal-field {
+		margin-top: 26rpx;
+	}
+
+	.modal-label {
+		display: block;
+		color: #7A6650;
+		font-size: 24rpx;
+		margin-bottom: 14rpx;
+	}
+
+	.modal-input {
+		height: 80rpx;
+		padding: 0 22rpx;
+		border-radius: 20rpx;
+		background: #fffaf2;
+		color: #3D3226;
+		font-size: 28rpx;
+		box-sizing: border-box;
+	}
+
+	.modal-placeholder {
+		color: #B9A88F;
+	}
+
+	.modal-actions {
+		display: flex;
+		gap: 20rpx;
+		margin-top: 36rpx;
+	}
+
+	.modal-btn {
+		flex: 1;
+		height: 84rpx;
+		border-radius: 20rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.modal-btn-cancel {
+		background: #F5EBDC;
+	}
+
+	.modal-btn-cancel-text {
+		color: #7A6650;
+		font-size: 28rpx;
+		font-weight: 600;
+	}
+
+	.modal-btn-confirm {
+		background: linear-gradient(135deg, #FFB84D 0%, #F59A23 100%);
+	}
+
+	.modal-btn-confirm-text {
+		color: #ffffff;
+		font-size: 28rpx;
+		font-weight: 600;
+	}
+
 	.field {
 		padding: 26rpx 28rpx;
+	}
+
+	.password-entry {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.password-entry-text {
+		color: #B9A88F;
+		font-size: 28rpx;
+	}
+
+	.password-entry-arrow {
+		width: 32rpx;
+		height: 32rpx;
 	}
 
 	.field + .field {
@@ -246,6 +455,38 @@
 		color: #3D3226;
 		font-size: 28rpx;
 		box-sizing: border-box;
+	}
+
+	.readonly-field {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.readonly-text {
+		color: #3D3226;
+		font-size: 28rpx;
+	}
+
+	.readonly-tip {
+		color: #B9A88F;
+		font-size: 24rpx;
+	}
+
+	.picker-wrap {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.department-value {
+		font-size: 28rpx;
+	}
+
+	.picker-arrow {
+		width: 32rpx;
+		height: 32rpx;
+		flex-shrink: 0;
 	}
 
 	.field-placeholder {

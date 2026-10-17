@@ -74,6 +74,19 @@ export function getCurrentCheckinSlot(date = new Date(), slots = CHECKIN_SLOTS) 
 	}) || null
 }
 
+export const CHECKIN_ADVANCE_MINUTES = 30
+
+// 打卡时间窗：仅目标时间点前30分钟内可打，到点即止，其余时间一律拒绝
+export function getCheckinWindowStatus(date = new Date(), slots = CHECKIN_SLOTS) {
+	const time = new Date(date).getTime()
+	const list = Array.isArray(slots) && slots.length ? slots : CHECKIN_SLOTS
+	const active = list.find((slot) => {
+		const scheduled = getSlotTime(date, slot)
+		return time >= scheduled - CHECKIN_ADVANCE_MINUTES * 60 * 1000 && time <= scheduled
+	}) || null
+	return { allowed: !!active, slot: active }
+}
+
 function getSlotForRecordTime(date, slots = CHECKIN_SLOTS) {
 	return getCurrentCheckinSlot(date, slots)
 }
@@ -105,6 +118,17 @@ export function getUserCheckinRecords(session) {
 function parseRecordTime(value) {
 	if (typeof value === 'number') {
 		return new Date(value < 100000000000 ? value * 1000 : value)
+	}
+	if (typeof value === 'string' && value) {
+		// "yyyy-MM-dd HH:mm:ss" 格式在 iOS 上无法被 new Date 解析，
+		// 无时区标识时按本地时间手动解析；带时区的 ISO 字符串走原生解析
+		const match = /^(\d{4})-(\d{1,2})-(\d{1,2})[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/.exec(value)
+		if (match) {
+			return new Date(
+				Number(match[1]), Number(match[2]) - 1, Number(match[3]),
+				Number(match[4]), Number(match[5]), Number(match[6] || 0)
+			)
+		}
 	}
 	return new Date(value)
 }
