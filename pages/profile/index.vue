@@ -1,9 +1,9 @@
 <template>
-	<view class="wrap" :class="currentTheme === 'dark' ? 'theme-dark' : 'theme-light'">
+	<view class="wrap">
 		<view class="bg-orb bg-orb-left"></view>
 		<view class="bg-orb bg-orb-right"></view>
 
-		<scroll-view class="scroll" scroll-y>
+		<view class="scroll">
 			<view class="top-glow"></view>
 
 			<view class="profile-head">
@@ -28,16 +28,17 @@
 				<text class="logout-text">退出登录</text>
 			</view>
 
-		</scroll-view>
+			<image class="cheer-banner" src="/static/cat-cheer.png" mode="widthFix" />
 
-		<app-tabbar current="profile" :theme="currentTheme" />
+		</view>
+
+		<app-tabbar current="profile" />
 	</view>
 </template>
 
 <script>
 	import AppTabbar from '@/components/app-tabbar/index.vue'
 	import { clearSession, getSession } from '@/utils/session'
-	import { getTheme } from '@/utils/theme'
 
 	export default {
 		components: {
@@ -49,12 +50,10 @@
 				department: '',
 				avatarUrl: '',
 				avatarLoadFailed: false,
-				currentTheme: 'light',
 				menuItems: [
 					{ key: 'profile', label: '个人信息', icon: '/static/icons/user.svg' },
 					{ key: 'security', label: '账号与安全', icon: '/static/icons/shield.svg' },
 					{ key: 'setting', label: '系统设置', icon: '/static/icons/settings.svg' },
-					{ key: 'help', label: '帮助与反馈', icon: '/static/icons/help.svg' },
 					{ key: 'about', label: '关于我们', icon: '/static/icons/info.svg' }
 				]
 			}
@@ -65,7 +64,6 @@
 			this.department = department
 				this.avatarUrl = avatarUrl
 				this.avatarLoadFailed = false
-			this.currentTheme = getTheme()
 
 			if (!this.userName || !this.department) {
 				clearSession()
@@ -97,13 +95,6 @@
 				if (item.key === 'about') {
 					uni.navigateTo({
 						url: '/pages/about/index'
-					})
-					return
-				}
-
-				if (item.key === 'help') {
-					uni.navigateTo({
-						url: '/pages/help/index'
 					})
 					return
 				}
@@ -171,11 +162,11 @@
 		z-index: 1;
 		height: 100%;
 		box-sizing: border-box;
-		padding: 42rpx 32rpx 170rpx;
+		padding: 36rpx 32rpx 170rpx;
 	}
 
 	.top-glow {
-		height: 176rpx;
+		height: 144rpx;
 		border-radius: 0 0 150rpx 150rpx;
 		background: radial-gradient(circle at 50% 0, rgba(255, 199, 130, 0.30) 0, rgba(255, 199, 130, 0.12) 34%, rgba(255, 199, 130, 0.04) 56%, rgba(255, 199, 130, 0) 76%);
 	}
@@ -205,7 +196,7 @@
 
 	.profile-name {
 		display: block;
-		margin-top: 28rpx;
+		margin-top: 24rpx;
 		color: #3D3226;
 		font-size: 46rpx;
 		font-weight: 600;
@@ -228,7 +219,7 @@
 	}
 
 	.menu-card {
-		margin-top: 50rpx;
+		margin-top: 40rpx;
 		overflow: hidden;
 	}
 
@@ -274,7 +265,7 @@
 
 	.logout-card {
 		justify-content: center;
-		margin-top: 36rpx;
+		margin-top: 24rpx;
 		height: 100rpx;
 	}
 
@@ -284,35 +275,12 @@
 		font-weight: 600;
 	}
 
-	.theme-dark {
-		background: linear-gradient(180deg, #211A14 0%, #2A211A 55%, #211A14 100%);
+	.cheer-banner {
+		position: absolute;
+		left: 0;
+		right: 0;
+		width: 100%;
+		bottom: calc(108rpx + env(safe-area-inset-bottom));
 	}
 
-	.theme-dark .bg-orb {
-		background: radial-gradient(circle, rgba(245, 166, 35, 0.10) 0%, rgba(245, 166, 35, 0.04) 42%, rgba(245, 166, 35, 0) 74%);
-	}
-
-	.theme-dark .top-glow {
-		background: radial-gradient(circle at 50% 0, rgba(245, 166, 35, 0.16) 0, rgba(245, 166, 35, 0.07) 34%, rgba(245, 166, 35, 0.03) 56%, rgba(245, 166, 35, 0) 76%);
-	}
-
-	.theme-dark .profile-name,
-	.theme-dark .menu-label {
-		color: #F5E9D9;
-	}
-
-	.theme-dark .profile-meta {
-		color: #B09A83;
-	}
-
-	.theme-dark .menu-card,
-	.theme-dark .logout-card,
-	.theme-dark .avatar-shell {
-		background: rgba(48, 39, 31, 0.96);
-		box-shadow: none;
-	}
-
-	.theme-dark .menu-row + .menu-row {
-		border-top-color: rgba(74, 61, 48, 0.9);
-	}
 </style>

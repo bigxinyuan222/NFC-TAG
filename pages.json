@@ -25,7 +25,8 @@
 			"path": "pages/profile/index",
 			"style": {
 				"navigationBarTitleText": "我的",
-				"navigationStyle": "custom"
+				"navigationStyle": "custom",
+				"disableScroll": true
 			}
 		},
 		{
@@ -46,13 +47,6 @@
 			"path": "pages/about/index",
 			"style": {
 				"navigationBarTitleText": "关于我们",
-				"navigationStyle": "custom"
-			}
-		},
-		{
-			"path": "pages/help/index",
-			"style": {
-				"navigationBarTitleText": "帮助与反馈",
 				"navigationStyle": "custom"
 			}
 		}

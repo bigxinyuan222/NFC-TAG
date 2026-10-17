@@ -1,5 +1,5 @@
 <template>
-	<view class="wrap" :class="currentTheme === 'dark' ? 'theme-dark' : 'theme-light'">
+	<view class="wrap">
 		<view class="nav-bar">
 			<view class="status-bar"></view>
 			<view class="nav-row">
@@ -34,12 +34,10 @@
 
 <script>
 	import { getSession, saveSession } from '@/utils/session'
-	import { getTheme } from '@/utils/theme'
 
 	export default {
 		data() {
 			return {
-				currentTheme: 'light',
 				avatarLoadFailed: false,
 				form: {
 					userName: '',
@@ -50,7 +48,6 @@
 		},
 		onShow() {
 			const { userName, department, avatarUrl } = getSession()
-			this.currentTheme = getTheme()
 			this.avatarLoadFailed = false
 			this.form.userName = userName
 			this.form.department = department
@@ -255,39 +252,4 @@
 		color: #B9A88F;
 	}
 
-	.theme-dark {
-		background: linear-gradient(180deg, #211A14 0%, #2A211A 55%, #211A14 100%);
-	}
-
-	.theme-dark .nav-title,
-	.theme-dark .field-input {
-		color: #F5E9D9;
-	}
-
-	.theme-dark .nav-action {
-		color: #F5A623;
-	}
-
-	.theme-dark .avatar-card,
-	.theme-dark .form-card {
-		background: rgba(48, 39, 31, 0.96);
-		box-shadow: none;
-	}
-
-	.theme-dark .field + .field {
-		border-top-color: rgba(74, 61, 48, 0.9);
-	}
-
-	.theme-dark .field-label,
-	.theme-dark .avatar-tip {
-		color: #B09A83;
-	}
-
-	.theme-dark .field-input {
-		background: #2A2219;
-	}
-
-	.theme-dark .field-placeholder {
-		color: #8A7761;
-	}
 </style>

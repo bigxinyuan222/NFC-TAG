@@ -1,5 +1,5 @@
 <template>
-	<view class="wrap" :class="currentTheme === 'dark' ? 'theme-dark' : 'theme-light'">
+	<view class="wrap">
 		<view class="nav-bar">
 			<view class="nav-back" @tap="goBack">
 				<image class="nav-icon" src="/static/icons/chevron-left.svg" mode="aspectFit" />
@@ -7,31 +7,11 @@
 			<text class="nav-title">系统设置</text>
 			<view class="nav-placeholder"></view>
 		</view>
-
-		<view class="panel">
-			<view class="setting-row">
-				<view>
-					<text class="setting-title">黑白主题</text>
-					<text class="setting-desc">开启后切换为深色黑白界面</text>
-				</view>
-				<switch :checked="currentTheme === 'dark'" color="#F59A23" @change="handleThemeChange" />
-			</view>
-		</view>
 	</view>
 </template>
 
 <script>
-	import { getTheme, saveTheme } from '@/utils/theme'
-
 	export default {
-		data() {
-			return {
-				currentTheme: 'light'
-			}
-		},
-		onShow() {
-			this.currentTheme = getTheme()
-		},
 		methods: {
 			goBack() {
 				uni.navigateBack({
@@ -41,10 +21,6 @@
 						})
 					}
 				})
-			},
-			handleThemeChange(event) {
-				this.currentTheme = event.detail.value ? 'dark' : 'light'
-				saveTheme(this.currentTheme)
 			}
 		}
 	}
@@ -119,23 +95,5 @@
 		margin-top: 10rpx;
 		color: #A08C77;
 		font-size: 22rpx;
-	}
-
-	.theme-dark {
-		background: linear-gradient(180deg, #211A14 0%, #2A211A 55%, #211A14 100%);
-	}
-
-	.theme-dark .nav-title,
-	.theme-dark .setting-title {
-		color: #F5E9D9;
-	}
-
-	.theme-dark .panel {
-		background: rgba(48, 39, 31, 0.96);
-		box-shadow: none;
-	}
-
-	.theme-dark .setting-desc {
-		color: #B09A83;
 	}
 </style>

@@ -1,5 +1,5 @@
 <template>
-	<view class="wrap" :class="currentTheme === 'dark' ? 'theme-dark' : 'theme-light'">
+	<view class="wrap">
 		<scroll-view class="scroll" scroll-y :refresher-enabled="true" :refresher-triggered="isRefreshing" @refresherrefresh="handleRefresh">
 			<view class="header-row">
 				<text class="page-title">打卡记录</text>
@@ -64,7 +64,7 @@
 			</view>
 		</scroll-view>
 
-		<app-tabbar current="records" :theme="currentTheme" />
+		<app-tabbar current="records" />
 	</view>
 </template>
 
@@ -73,7 +73,6 @@
 	import { CHECKIN_SLOTS, getMonthlyCheckinStats, getMonthlyCheckinStatsFromRecords, getUserCheckinRecords, matchCheckinSlots, normalizeRemoteCheckinRecords } from '@/utils/checkin-record'
 	import { getMyCheckins } from '@/api/checkin'
 	import { clearSession, getSession } from '@/utils/session'
-	import { getTheme } from '@/utils/theme'
 
 	function formatDateKey(date) {
 		const year = date.getFullYear()
@@ -104,7 +103,6 @@
 			return {
 				userName: '',
 				department: '',
-				currentTheme: 'light',
 				selectedDateKey: '',
 				selectedDateText: '',
 				selectedWeekText: '',
@@ -138,7 +136,6 @@
 			const { userName, department } = getSession()
 			this.userName = userName
 			this.department = department
-			this.currentTheme = getTheme()
 
 			if (!this.userName || !this.department) {
 				this.requestVersion++
@@ -270,58 +267,6 @@
 		height: 100vh;
 		height: 100dvh;
 		background: linear-gradient(180deg, #FFF9EF 0%, #FDF3E4 60%, #FBEDD9 100%);
-	}
-
-	.theme-dark {
-		background: linear-gradient(180deg, #211A14 0%, #2A211A 55%, #211A14 100%);
-	}
-
-	.theme-dark .page-title,
-	.theme-dark .stats-title,
-	.theme-dark .stat-num,
-	.theme-dark .schedule-title,
-	.theme-dark .schedule-name {
-		color: #F5E9D9;
-	}
-
-	.theme-dark .stat-primary {
-		color: #F5A623;
-	}
-
-	.theme-dark .stat-warn {
-		color: #E8A45C;
-	}
-
-	.theme-dark .date-text,
-	.theme-dark .stat-label,
-	.theme-dark .schedule-date,
-	.theme-dark .schedule-time,
-	.theme-dark .schedule-status {
-		color: #B09A83;
-	}
-
-	.theme-dark .source-message,
-	.theme-dark .load-message {
-		color: #B09A83;
-	}
-
-	.theme-dark .date-bar,
-	.theme-dark .stats-card,
-	.theme-dark .schedule-card {
-		background: rgba(48, 39, 31, 0.96);
-		box-shadow: none;
-	}
-
-	.theme-dark .schedule-row {
-		border-color: #3B3026;
-	}
-
-	.theme-dark .schedule-checked {
-		color: #F5A623;
-	}
-
-	.theme-dark .schedule-late {
-		color: #e8a45c;
 	}
 
 	.scroll {
