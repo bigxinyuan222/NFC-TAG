@@ -2,6 +2,7 @@
 	import { clearSession, hasSession, requireNfcRescan, setPendingNfcTag } from './utils/session'
 	import { acquireNfcSubmissionLock, readTagFromCurrentIntent, releaseNfcSubmissionLock, startNfcScan, stopNfcScan } from './utils/nfc-checkin'
 	import { submitCheckin } from './api/checkin'
+	import { getCheckinWindowStatus } from './utils/checkin-record'
 	import { NFC_CHECKIN_POINT_ID } from './utils/nfc-config'
 	import { getSession } from './utils/session'
 
@@ -70,6 +71,11 @@
 				}
 
 				try {
+					const windowStatus = getCheckinWindowStatus()
+					if (!windowStatus.allowed) {
+						this.showLocalNotification('打卡失败', '不在打卡时间范围内')
+						return
+					}
 					const result = await submitCheckin({
 						pointId: NFC_CHECKIN_POINT_ID,
 						uid: uid

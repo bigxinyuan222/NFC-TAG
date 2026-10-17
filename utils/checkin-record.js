@@ -74,6 +74,19 @@ export function getCurrentCheckinSlot(date = new Date(), slots = CHECKIN_SLOTS) 
 	}) || null
 }
 
+export const CHECKIN_ADVANCE_MINUTES = 30
+
+// 打卡时间窗：仅目标时间点前30分钟内可打，到点即止，其余时间一律拒绝
+export function getCheckinWindowStatus(date = new Date(), slots = CHECKIN_SLOTS) {
+	const time = new Date(date).getTime()
+	const list = Array.isArray(slots) && slots.length ? slots : CHECKIN_SLOTS
+	const active = list.find((slot) => {
+		const scheduled = getSlotTime(date, slot)
+		return time >= scheduled - CHECKIN_ADVANCE_MINUTES * 60 * 1000 && time <= scheduled
+	}) || null
+	return { allowed: !!active, slot: active }
+}
+
 function getSlotForRecordTime(date, slots = CHECKIN_SLOTS) {
 	return getCurrentCheckinSlot(date, slots)
 }
