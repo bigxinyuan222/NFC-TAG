@@ -136,14 +136,21 @@
 					}
 				}, 350)
 			}
+			uni.$on('checkin-window-denied', this.handleCheckinDenied)
+			if (uni.getStorageSync('pendingCheckinDenied')) {
+				uni.removeStorageSync('pendingCheckinDenied')
+				this.handleCheckinDenied()
+			}
 		},
 		onHide() {
 			this.pageVisible = false
 			this.stopClock()
+			uni.$off('checkin-window-denied', this.handleCheckinDenied)
 		},
 		onUnload() {
 			this.pageVisible = false
 			this.stopClock()
+			uni.$off('checkin-window-denied', this.handleCheckinDenied)
 		},
 		methods: {
 			goLogin() {
@@ -155,6 +162,15 @@
 				uni.reLaunch({
 					url: '/pages/records/index'
 				})
+			},
+			handleCheckinDenied() {
+				this.result = {
+					success: false,
+					message: '不在打卡时间范围内',
+					pointId: '',
+					timeText: ''
+				}
+				this.resultVisible = true
 			},
 			refreshClock() {
 				const now = new Date()
@@ -194,13 +210,8 @@
 				this.requiresNfcRescan = false
 				const windowStatus = getCheckinWindowStatus()
 				if (!windowStatus.allowed) {
-					this.result = {
-						success: false,
-						message: '不在打卡时间范围内',
-						pointId: '',
-						timeText: ''
-					}
-					this.resultVisible = true
+					releaseNfcSubmissionLock()
+					this.handleCheckinDenied()
 					return
 				}
 				this.submitCheckin({

@@ -48,11 +48,30 @@
 					})
 					return
 				}
+				const windowStatus = getCheckinWindowStatus()
+				if (!windowStatus.allowed) {
+					this.showCheckinDenied()
+					return
+				}
 				if (!acquireNfcSubmissionLock()) {
 					uni.showToast({ title: '正在处理本次打卡', icon: 'none' })
 					return
 				}
 				setPendingNfcTag(tag)
+				uni.reLaunch({
+					url: '/pages/checkin/index'
+				})
+			},
+
+			showCheckinDenied() {
+				const pages = getCurrentPages()
+				const current = pages[pages.length - 1]
+				if (current && current.route === 'pages/checkin/index') {
+					// 已在打卡页：直接通知当前页弹窗，避免跳页
+					uni.$emit('checkin-window-denied')
+					return
+				}
+				uni.setStorageSync('pendingCheckinDenied', true)
 				uni.reLaunch({
 					url: '/pages/checkin/index'
 				})
