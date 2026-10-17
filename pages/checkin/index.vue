@@ -197,8 +197,8 @@
 					this.result = {
 						success: false,
 						message: '不在打卡时间范围内',
-						pointId: NFC_CHECKIN_POINT_ID,
-						timeText: formatClockTime(new Date())
+						pointId: '',
+						timeText: ''
 					}
 					this.resultVisible = true
 					return
@@ -258,7 +258,7 @@
 				this.result = {
 					success,
 					message,
-					pointId: payload.pointId || '',
+					pointId: '',
 					timeText: displayTime
 				}
 
