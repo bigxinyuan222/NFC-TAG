@@ -9,7 +9,7 @@
 						<text class="subtitle">{{ department }}</text>
 					</view>
 				</view>
-				<view class="avatar" :class="avatarFrameClass" @longpress="logout">
+				<view class="avatar" :class="avatarFrameClass" @tap="previewAvatar" @longpress="logout">
 					<image v-if="avatarUrl && !avatarLoadFailed" class="avatar-image" :src="avatarUrl" mode="aspectFill" @error="handleAvatarError" />
 					<view v-else class="avatar-fallback">
 						<view class="avatar-head"></view>
@@ -317,8 +317,15 @@
 					this.resultVisible = false
 				},
 				handleAvatarError() {
-					this.avatarLoadFailed = true
-				}
+				this.avatarLoadFailed = true
+			},
+			previewAvatar() {
+				if (!this.avatarUrl || this.avatarLoadFailed) return
+				uni.previewImage({
+					urls: [this.avatarUrl],
+					current: this.avatarUrl
+				})
+			}
 		}
 	}
 </script>
