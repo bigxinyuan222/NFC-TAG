@@ -1,14 +1,14 @@
 {
 	"pages": [ 
 		{
-			"path": "pages/login/index",
+			"path": "pages/checkin/index",
 			"style": {
 				"navigationBarTitleText": "喵呜打卡",
 				"navigationStyle": "custom"
 			}
 		},
 		{
-			"path": "pages/checkin/index",
+			"path": "pages/login/index",
 			"style": {
 				"navigationBarTitleText": "喵呜打卡",
 				"navigationStyle": "custom"

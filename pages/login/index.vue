@@ -76,11 +76,6 @@
 			}
 		},
 			onShow() {
-			if (hasSession()) {
-				this.goCheckin()
-				return
-			}
-
 			const { userName, department } = getSession()
 			this.form.userName = userName
 			const departmentIndex = this.departmentOptions.indexOf(department)
