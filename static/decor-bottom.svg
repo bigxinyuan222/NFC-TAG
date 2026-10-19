@@ -1,0 +1,9 @@
+<svg width="750" height="260" viewBox="0 0 750 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 176C118 138 214 210 344 180 460 153 552 100 660 128 706 140 730 158 750 172V260H0Z" fill="#FFD7A2" opacity="0.32"/>
+<path d="M0 212C152 186 252 232 392 210 506 192 612 162 750 204V260H0Z" fill="#FFC887" opacity="0.24"/>
+<g fill="#F59A23" opacity="0.14">
+<g transform="translate(128 118) rotate(-18)"><ellipse cy="0" rx="17" ry="14"/><ellipse cx="-15" cy="-22" rx="7" ry="9"/><ellipse cy="-28" rx="7" ry="10"/><ellipse cx="15" cy="-22" rx="7" ry="9"/><ellipse cx="27" cy="-10" rx="6.5" ry="8"/></g>
+<g transform="translate(306 86) rotate(-6) scale(0.88)"><ellipse cy="0" rx="17" ry="14"/><ellipse cx="-15" cy="-22" rx="7" ry="9"/><ellipse cy="-28" rx="7" ry="10"/><ellipse cx="15" cy="-22" rx="7" ry="9"/><ellipse cx="27" cy="-10" rx="6.5" ry="8"/></g>
+<g transform="translate(578 126) rotate(-14) scale(1.04)"><ellipse cy="0" rx="17" ry="14"/><ellipse cx="-15" cy="-22" rx="7" ry="9"/><ellipse cy="-28" rx="7" ry="10"/><ellipse cx="15" cy="-22" rx="7" ry="9"/><ellipse cx="27" cy="-10" rx="6.5" ry="8"/></g>
+</g>
+</svg>

@@ -9,12 +9,13 @@
 						<text class="subtitle">{{ department }}</text>
 					</view>
 				</view>
-				<view class="avatar" @longpress="logout">
+				<view class="avatar" :class="avatarFrameClass" @longpress="logout">
 					<image v-if="avatarUrl && !avatarLoadFailed" class="avatar-image" :src="avatarUrl" mode="aspectFill" @error="handleAvatarError" />
 					<view v-else class="avatar-fallback">
 						<view class="avatar-head"></view>
 						<view class="avatar-body"></view>
 					</view>
+					<image v-if="avatarFrameOverlay" class="avatar-frame-overlay" :src="avatarFrameOverlay" mode="aspectFit" />
 				</view>
 			</view>
 
@@ -57,6 +58,8 @@
 			</view>
 		</view>
 
+		<image class="bottom-decor" src="/static/decor-bottom.svg" mode="widthFix" />
+
 		<app-tabbar current="checkin" />
 
 		<checkin-result
@@ -79,6 +82,7 @@
 	import { NFC_CHECKIN_POINT_ID } from '@/utils/nfc-config'
 	import { releaseNfcSubmissionLock } from '@/utils/nfc-checkin'
 	import { formatClockTime, formatDateText } from '@/utils/time'
+	import { getAvatarFrame, getAvatarFrameId } from '@/utils/avatar-frame'
 
 	export default {
 		components: {
@@ -91,6 +95,8 @@
 				department: '',
 				avatarUrl: '',
 				avatarLoadFailed: false,
+				avatarFrameId: 'default',
+				avatarFrameEntry: {},
 				timeText: '',
 				dateText: '',
 				summaryDateKey: '',
@@ -108,6 +114,14 @@
 				}
 			}
 		},
+		computed: {
+			avatarFrameClass() {
+				return this.avatarFrameEntry.className || ''
+			},
+			avatarFrameOverlay() {
+				return this.avatarFrameEntry.overlay || ''
+			}
+		},
 		onShow() {
 			this.pageVisible = true
 			const { userName, department, avatarUrl } = getSession()
@@ -115,6 +129,8 @@
 			this.department = department
 				this.avatarUrl = avatarUrl
 				this.avatarLoadFailed = false
+			this.avatarFrameId = getAvatarFrameId(getSession())
+			this.avatarFrameEntry = getAvatarFrame(getSession())
 
 			if (!hasSession()) {
 				clearSession()
@@ -306,6 +322,7 @@
 	}
 
 	.wrap {
+		position: relative;
 		height: 100vh;
 		height: 100dvh;
 		padding: 24rpx 24rpx 112rpx;
@@ -314,7 +331,19 @@
 		overflow: hidden;
 	}
 
+	.bottom-decor {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: calc(108rpx + env(safe-area-inset-bottom));
+		width: 100%;
+		z-index: 0;
+		pointer-events: none;
+	}
+
 	.screen-shell {
+		position: relative;
+		z-index: 1;
 		height: 100%;
 		display: flex;
 		flex-direction: column;
@@ -535,6 +564,7 @@
 		padding: 22rpx 22rpx 28rpx;
 		border-radius: 30rpx;
 		background: rgba(255, 255, 255, 0.96);
+		border: 1rpx solid rgba(242, 231, 213, 0.92);
 		box-shadow: 0 18rpx 50rpx rgba(212, 162, 94, 0.12);
 		flex-shrink: 0;
 	}

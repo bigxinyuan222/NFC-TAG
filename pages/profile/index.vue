@@ -7,8 +7,9 @@
 			<view class="top-glow"></view>
 
 			<view class="profile-head">
-				<view class="avatar-shell">
+				<view class="avatar-shell" :class="avatarFrameClass" @tap="openFramePicker">
 					<image class="avatar-image" :src="avatarLoadFailed || !avatarUrl ? '/static/icons/avatar-default.svg' : avatarUrl" mode="aspectFill" @error="handleAvatarError" />
+					<image v-if="avatarFrameOverlay" class="avatar-frame-overlay" :src="avatarFrameOverlay" mode="aspectFit" />
 				</view>
 				<text class="profile-name">{{ userName }}</text>
 				<text class="profile-meta">{{ department }}</text>
@@ -17,7 +18,9 @@
 			<view class="menu-card">
 				<view v-for="item in menuItems" :key="item.key" class="menu-row" @tap="handleMenu(item)">
 					<view class="menu-left">
-						<image class="menu-icon" :src="item.icon" mode="aspectFit" />
+						<view class="menu-chip" :style="{ backgroundColor: item.tint }">
+							<image class="menu-icon" :src="item.icon" mode="aspectFit" />
+						</view>
 						<text class="menu-label">{{ item.label }}</text>
 					</view>
 					<image class="menu-arrow-icon" src="/static/icons/menu-chevron-right.svg" mode="aspectFit" />
@@ -32,6 +35,22 @@
 
 		</view>
 
+		<view v-if="framePickerVisible" class="frame-mask" @tap="closeFramePicker"></view>
+		<view class="frame-panel" :class="{ 'frame-panel--show': framePickerVisible }">
+			<text class="frame-panel-title">选择头像框</text>
+			<view class="frame-options">
+				<view v-for="item in avatarFrames" :key="item.id" class="frame-option" @tap="selectFrame(item.id)">
+					<view class="frame-preview-wrap" :class="{ 'frame-preview-wrap--active': avatarFrameId === item.id }">
+						<view class="frame-preview avatar" :class="item.className">
+							<image class="frame-preview-image" :src="avatarLoadFailed || !avatarUrl ? '/static/icons/avatar-default.svg' : avatarUrl" mode="aspectFill" />
+							<image v-if="item.overlay" class="avatar-frame-overlay" :src="item.overlay" mode="aspectFit" />
+						</view>
+					</view>
+					<text class="frame-option-name" :class="{ 'frame-option-name--active': avatarFrameId === item.id }">{{ item.name }}</text>
+				</view>
+			</view>
+		</view>
+
 		<app-tabbar current="profile" />
 	</view>
 </template>
@@ -39,6 +58,7 @@
 <script>
 	import AppTabbar from '@/components/app-tabbar/index.vue'
 	import { clearSession, getSession } from '@/utils/session'
+	import { AVATAR_FRAMES, getAvatarFrame, getAvatarFrameId, setAvatarFrameId } from '@/utils/avatar-frame'
 
 	export default {
 		components: {
@@ -50,20 +70,35 @@
 				department: '',
 				avatarUrl: '',
 				avatarLoadFailed: false,
+				avatarFrameId: 'default',
+				avatarFrameEntry: AVATAR_FRAMES[0],
+				avatarFrames: AVATAR_FRAMES,
+				framePickerVisible: false,
 				menuItems: [
-					{ key: 'profile', label: '个人信息', icon: '/static/icons/user.svg' },
-					{ key: 'security', label: '账号与安全', icon: '/static/icons/shield.svg' },
-					{ key: 'setting', label: '系统设置', icon: '/static/icons/settings.svg' },
-					{ key: 'about', label: '关于我们', icon: '/static/icons/info.svg' }
+					{ key: 'profile', label: '个人信息', icon: '/static/icons/menu-user.svg', tint: 'rgba(245, 154, 35, 0.14)' },
+					{ key: 'security', label: '账号与安全', icon: '/static/icons/menu-shield.svg', tint: 'rgba(95, 169, 122, 0.16)' },
+					{ key: 'setting', label: '系统设置', icon: '/static/icons/menu-settings.svg', tint: 'rgba(107, 143, 216, 0.16)' },
+					{ key: 'about', label: '关于我们', icon: '/static/icons/menu-about.svg', tint: 'rgba(176, 124, 212, 0.16)' }
 				]
 			}
 		},
+		computed: {
+			avatarFrameClass() {
+				return this.avatarFrameEntry.className
+			},
+			avatarFrameOverlay() {
+				return this.avatarFrameEntry.overlay
+			}
+		},
 		onShow() {
-			const { userName, department, avatarUrl } = getSession()
+			const session = getSession()
+			const { userName, department, avatarUrl } = session
 			this.userName = userName
 			this.department = department
 				this.avatarUrl = avatarUrl
 				this.avatarLoadFailed = false
+			this.avatarFrameId = getAvatarFrameId(session)
+			this.avatarFrameEntry = getAvatarFrame(session)
 
 			if (!this.userName || !this.department) {
 				clearSession()
@@ -118,6 +153,18 @@
 			},
 				handleAvatarError() {
 					this.avatarLoadFailed = true
+				},
+				openFramePicker() {
+					this.framePickerVisible = true
+				},
+				closeFramePicker() {
+					this.framePickerVisible = false
+				},
+				selectFrame(frameId) {
+					setAvatarFrameId(getSession(), frameId)
+					this.avatarFrameId = frameId
+					this.avatarFrameEntry = getAvatarFrame(getSession())
+					this.framePickerVisible = false
 				}
 		}
 	}
@@ -242,13 +289,22 @@
 	}
 
 	.menu-left {
-		gap: 28rpx;
+		gap: 24rpx;
+	}
+
+	.menu-chip {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 76rpx;
+		height: 76rpx;
+		border-radius: 24rpx;
+		flex-shrink: 0;
 	}
 
 	.menu-icon {
-		width: 42rpx;
-		height: 42rpx;
-		flex-shrink: 0;
+		width: 40rpx;
+		height: 40rpx;
 	}
 
 	.menu-label {
@@ -281,6 +337,94 @@
 		right: 0;
 		width: 100%;
 		bottom: calc(108rpx + env(safe-area-inset-bottom));
+	}
+
+	.frame-mask {
+		position: fixed;
+		left: 0;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		z-index: 90;
+		background: rgba(0, 0, 0, 0.35);
+	}
+
+	.frame-panel {
+		position: fixed;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 91;
+		padding: 36rpx 28rpx calc(44rpx + env(safe-area-inset-bottom));
+		background: #FFFFFF;
+		border-radius: 36rpx 36rpx 0 0;
+		box-shadow: 0 -12rpx 30rpx rgba(212, 162, 94, 0.10);
+		transform: translateY(100%);
+		opacity: 0;
+		transition: transform 0.28s ease, opacity 0.28s ease;
+	}
+
+	.frame-panel--show {
+		transform: translateY(0);
+		opacity: 1;
+	}
+
+	.frame-panel-title {
+		display: block;
+		text-align: center;
+		color: #3D3226;
+		font-size: 32rpx;
+		font-weight: 700;
+	}
+
+	.frame-options {
+		display: flex;
+		justify-content: space-between;
+		margin-top: 36rpx;
+	}
+
+	.frame-option {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		flex: 1;
+	}
+
+	.frame-preview-wrap {
+		padding: 14rpx;
+		border-radius: 50%;
+		box-shadow: 0 0 0 2rpx transparent;
+		transition: box-shadow 0.2s ease;
+	}
+
+	.frame-preview-wrap--active {
+		box-shadow: 0 0 0 2rpx #F59A23;
+	}
+
+	.frame-preview {
+		width: 92rpx;
+		height: 92rpx;
+		border-radius: 50%;
+		background: #FFF9EF;
+		overflow: hidden;
+		box-sizing: border-box;
+	}
+
+	.frame-preview-image {
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+	}
+
+	.frame-option-name {
+		margin-top: 14rpx;
+		color: #A08C77;
+		font-size: 24rpx;
+	}
+
+	.frame-option-name--active {
+		color: #F59A23;
+		font-weight: 600;
 	}
 
 </style>

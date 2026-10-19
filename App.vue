@@ -180,4 +180,59 @@
 page {
 	background: #FDF6E9;
 }
+
+/* 头像框：用 box-shadow 叠加画环，避免 border 改变容器尺寸导致布局位移 */
+.avatar-shell.avatar-frame--sunset,
+.avatar.avatar-frame--sunset {
+	box-shadow: 0 0 0 6rpx #FFB84D, 0 0 22rpx rgba(245, 154, 35, 0.5);
+}
+
+.avatar-shell.avatar-frame--mint,
+.avatar.avatar-frame--mint {
+	box-shadow: 0 0 0 6rpx #5FA97A, 0 0 18rpx rgba(95, 169, 122, 0.45);
+}
+
+.avatar-shell.avatar-frame--violet,
+.avatar.avatar-frame--violet {
+	box-shadow: 0 0 0 5rpx #B07CD4, 0 0 0 11rpx rgba(176, 124, 212, 0.28), 0 0 20rpx rgba(176, 124, 212, 0.4);
+}
+
+.avatar-shell.avatar-frame--gold,
+.avatar.avatar-frame--gold {
+	box-shadow: 0 0 0 4rpx #E6A23C, 0 0 0 10rpx rgba(230, 162, 60, 0.4), 0 0 18rpx rgba(230, 162, 60, 0.45);
+}
+
+/* 装饰型头像框（猫爪）：用 SVG 覆盖层叠加，容器需定位为参照 */
+.avatar-frame-overlay {
+	position: absolute;
+	left: -16%;
+	top: -16%;
+	width: 132%;
+	height: 132%;
+	z-index: 3;
+	pointer-events: none;
+}
+
+/* 猫爪形态：圆角方形 + 允许猫耳/爪印超出容器不被裁掉 */
+.avatar-shell.avatar-shape--catpaw,
+.avatar.avatar-shape--catpaw {
+	position: relative;
+	border-radius: 30%;
+	overflow: visible;
+}
+
+/* 猫爪形态下头像内容也要跟着变圆角方形，否则方框里套圆形头像 */
+.avatar-shape--catpaw .avatar-image,
+.avatar-shape--catpaw .frame-preview-image,
+.avatar-shape--catpaw .avatar-fallback {
+	border-radius: 26%;
+}
+
+/* 猫爪自带金色 SVG 外框：去掉原有白色圆环（背景+内边距）与圆形阴影，避免叠成双环 */
+.avatar-shell.avatar-frame--catpaw,
+.avatar.avatar-frame--catpaw {
+	box-shadow: none;
+	background: transparent;
+	padding: 0;
+}
 </style>
