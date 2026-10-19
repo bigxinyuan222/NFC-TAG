@@ -41,7 +41,8 @@
 					<text class="schedule-date">{{ selectedDateText }}</text>
 				</view>
 				<view v-if="dayRecords.length === 0" class="record-empty">
-					<text class="record-empty-text">{{ isLoading ? '记录加载中…' : '当天暂无打卡记录' }}</text>
+					<image v-if="!isLoading" class="record-empty-cat" src="/static/cat-empty.png" mode="aspectFit" />
+					<text class="record-empty-text">{{ isLoading ? '记录加载中…' : '这一天还没有打卡记录哦，喵' }}</text>
 				</view>
 				<view v-for="record in dayRecords" :key="record.id" class="schedule-row">
 					<view class="schedule-left">
@@ -52,6 +53,8 @@
 				</view>
 			</view>
 		</scroll-view>
+
+		<image class="bottom-decor" src="/static/decor-bottom.svg" mode="widthFix" />
 
 		<app-tabbar current="records" />
 	</view>
@@ -236,12 +239,26 @@
 	}
 
 	.wrap {
+		position: relative;
 		height: 100vh;
 		height: 100dvh;
+		overflow: hidden;
 		background: linear-gradient(180deg, #FFF9EF 0%, #FDF3E4 60%, #FBEDD9 100%);
 	}
 
+	.bottom-decor {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: calc(108rpx + env(safe-area-inset-bottom));
+		width: 100%;
+		z-index: 0;
+		pointer-events: none;
+	}
+
 	.scroll {
+		position: relative;
+		z-index: 1;
 		height: 100%;
 		box-sizing: border-box;
 		padding: 156rpx 30rpx 132rpx;
@@ -285,6 +302,7 @@
 	.stats-card,
 	.schedule-card {
 		background: rgba(255, 255, 255, 0.98);
+		border: 1rpx solid rgba(242, 231, 213, 0.92);
 		box-shadow: 0 12rpx 30rpx rgba(212, 162, 94, 0.10);
 	}
 
@@ -436,10 +454,17 @@
 	}
 
 	.record-empty {
-		min-height: 130rpx;
 		display: flex;
+		flex-direction: column;
 		align-items: center;
 		justify-content: center;
+		padding: 28rpx 0 34rpx;
+		gap: 14rpx;
+	}
+
+	.record-empty-cat {
+		width: 240rpx;
+		height: 158rpx;
 	}
 
 	.record-empty-text {
