@@ -9,7 +9,7 @@
 						<text class="subtitle">{{ department }}</text>
 					</view>
 				</view>
-				<view class="avatar" :class="avatarFrameClass" @longpress="logout">
+				<view class="avatar" :class="avatarFrameClass" @tap="previewAvatar" @longpress="logout">
 					<image v-if="avatarUrl && !avatarLoadFailed" class="avatar-image" :src="avatarUrl" mode="aspectFill" @error="handleAvatarError" />
 					<view v-else class="avatar-fallback">
 						<view class="avatar-head"></view>
@@ -77,7 +77,7 @@
 	import AppTabbar from '@/components/app-tabbar/index.vue'
 	import CheckinResult from '@/components/checkin-result/index.vue'
 	import { clearSession, consumeNfcRescanRequired, consumePendingNfcTag, getSession, hasSession } from '@/utils/session'
-	import { getCheckinWindowStatus, getTodayCheckinSummary, saveCheckinRecord } from '@/utils/checkin-record'
+	import { getCheckinWindowStatus, getTodayCheckinSummary, hasCheckedInCurrentWindow, saveCheckinRecord } from '@/utils/checkin-record'
 	import { submitCheckin as submitCheckinRequest } from '@/api/checkin'
 	import { NFC_CHECKIN_POINT_ID } from '@/utils/nfc-config'
 	import { releaseNfcSubmissionLock } from '@/utils/nfc-checkin'
@@ -152,9 +152,10 @@
 				}, 350)
 			}
 			uni.$on('checkin-window-denied', this.handleCheckinDenied)
-			if (uni.getStorageSync('pendingCheckinDenied')) {
+			const pendingDenied = uni.getStorageSync('pendingCheckinDenied')
+			if (pendingDenied) {
 				uni.removeStorageSync('pendingCheckinDenied')
-				this.handleCheckinDenied()
+				this.handleCheckinDenied(typeof pendingDenied === 'object' ? pendingDenied : null)
 			}
 		},
 		onHide() {
@@ -178,10 +179,11 @@
 					url: '/pages/records/index'
 				})
 			},
-			handleCheckinDenied() {
+			handleCheckinDenied(options) {
+				const message = options && options.message ? options.message : '不在打卡时间范围内'
 				this.result = {
 					success: false,
-					message: '不在打卡时间范围内',
+					message,
 					pointId: '',
 					timeText: ''
 				}
@@ -227,6 +229,11 @@
 				if (!windowStatus.allowed) {
 					releaseNfcSubmissionLock()
 					this.handleCheckinDenied()
+					return
+				}
+				if (hasCheckedInCurrentWindow({ userName: this.userName, department: this.department })) {
+					releaseNfcSubmissionLock()
+					this.handleCheckinDenied({ message: '该时间已打过卡' })
 					return
 				}
 				this.submitCheckin({
@@ -310,8 +317,15 @@
 					this.resultVisible = false
 				},
 				handleAvatarError() {
-					this.avatarLoadFailed = true
-				}
+				this.avatarLoadFailed = true
+			},
+			previewAvatar() {
+				if (!this.avatarUrl || this.avatarLoadFailed) return
+				uni.previewImage({
+					urls: [this.avatarUrl],
+					current: this.avatarUrl
+				})
+			}
 		}
 	}
 </script>
