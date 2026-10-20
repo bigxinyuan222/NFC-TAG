@@ -22,21 +22,37 @@
 		profile: '/pages/profile/index'
 	}
 
+	const TAB_ICON = {
+		checkin: 'home',
+		records: 'record',
+		profile: 'profile'
+	}
+
 	export default {
 		props: {
 			current: {
 				type: String,
 				default: 'checkin'
+			},
+			// 由页面传入当前的皮肤 class（如 skin-mint），用于切换对应配色的图标
+			skin: {
+				type: String,
+				default: 'skin-sunny'
+			}
+		},
+		computed: {
+			skinId() {
+				const skin = this.skin || 'skin-sunny'
+				return skin.indexOf('skin-') === 0 ? skin.slice(5) : skin
 			}
 		},
 		methods: {
 			getIcon(name) {
-				const iconMap = {
-					checkin: this.current === 'checkin' ? '/static/icons/home-active.svg' : '/static/icons/home-muted.svg',
-					records: this.current === 'records' ? '/static/icons/record-active.svg' : '/static/icons/record-muted.svg',
-					profile: this.current === 'profile' ? '/static/icons/profile-active.svg' : '/static/icons/profile-muted.svg'
-				}
-				return iconMap[name]
+				const iconName = TAB_ICON[name] || 'home'
+				const state = this.current === name ? 'active' : 'muted'
+				// 暖阳皮肤沿用原始图标，其余皮肤使用按配色重新着色的副本
+				const dir = this.skinId === 'sunny' ? '/static/icons' : '/static/icons/skins/' + this.skinId
+				return dir + '/' + iconName + '-' + state + '.svg'
 			},
 			switchTab(name) {
 				if (this.current === name) {
@@ -63,8 +79,8 @@
 		justify-content: space-around;
 		height: 108rpx;
 		padding-bottom: env(safe-area-inset-bottom);
-		background: rgba(255, 255, 255, 0.98);
-		box-shadow: 0 -8rpx 20rpx rgba(212, 162, 94, 0.10);
+		background: var(--sk-card);
+		box-shadow: 0 -8rpx 20rpx var(--sk-shadow-sm);
 	}
 
 	.tab-item {
@@ -73,11 +89,11 @@
 		align-items: center;
 		justify-content: center;
 		gap: 8rpx;
-		color: #C4B2A0;
+		color: var(--sk-tab-muted);
 	}
 
 	.tab-item.active {
-		color: #F59A23;
+		color: var(--sk-accent);
 	}
 
 	.tab-icon {

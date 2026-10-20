@@ -1,5 +1,5 @@
 <template>
-	<view class="wrap">
+	<view class="wrap" :class="skinClass">
 		<view class="nav-bar">
 			<view class="nav-back" @tap="goBack">
 				<image class="nav-icon" src="/static/icons/chevron-left.svg" mode="aspectFit" />
@@ -9,6 +9,22 @@
 		</view>
 
 		<view class="panel">
+			<view class="setting-row">
+				<view class="setting-main">
+					<text class="setting-title">配色</text>
+					<text class="setting-desc">当前 {{ currentSkinName }}</text>
+				</view>
+				<view class="skin-picker">
+					<view
+						v-for="item in skinOptions"
+						:key="item.id"
+						class="skin-swatch"
+						:class="{ 'skin-swatch--active': skinId === item.id }"
+						:style="{ backgroundColor: item.dot }"
+						@tap="handleSkinChange(item.id)"
+					></view>
+				</view>
+			</view>
 			<view class="setting-row">
 				<view class="setting-main">
 					<text class="setting-title">当前版本</text>
@@ -29,15 +45,38 @@
 
 <script>
 	import { APP_VERSION } from '@/utils/config'
+	import { SKINS, getSkin, saveSkinId } from '@/utils/skin'
 
 	export default {
 		data() {
 			return {
 				version: APP_VERSION,
-				checking: false
+				checking: false,
+				skinOptions: SKINS,
+				skinId: 'sunny',
+				skinClass: 'skin-sunny'
 			}
 		},
+		computed: {
+			currentSkinName() {
+				const skin = SKINS.find((item) => item.id === this.skinId)
+				return skin ? skin.name : ''
+			}
+		},
+		onShow() {
+			this.syncSkin()
+		},
 		methods: {
+			syncSkin() {
+				const skin = getSkin()
+				this.skinId = skin.id
+				this.skinClass = skin.className
+			},
+			handleSkinChange(id) {
+				if (this.skinId === id) return
+				saveSkinId(id)
+				this.syncSkin()
+			},
 			goBack() {
 				uni.navigateBack({
 					fail: () => {
@@ -100,7 +139,7 @@
 
 <style>
 	page {
-		background: #FDF6E9;
+		background: var(--sk-page-bg);
 	}
 
 	.wrap {
@@ -108,7 +147,7 @@
 		height: 100dvh;
 		padding: 88rpx 32rpx 32rpx;
 		box-sizing: border-box;
-		background: linear-gradient(180deg, #FFF9EF 0%, #FDF3E4 60%, #FBEDD9 100%);
+		background: linear-gradient(180deg, var(--sk-bg-1) 0%, var(--sk-bg-2) 60%, var(--sk-bg-3) 100%);
 	}
 
 		.nav-bar {
@@ -136,7 +175,7 @@
 		}
 
 	.nav-title {
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 32rpx;
 		font-weight: 600;
 	}
@@ -145,7 +184,7 @@
 		margin-top: 28rpx;
 		background: rgba(255, 255, 255, 0.98);
 		border-radius: 28rpx;
-		box-shadow: 0 12rpx 30rpx rgba(212, 162, 94, 0.12);
+		box-shadow: 0 12rpx 30rpx var(--sk-shadow);
 		overflow: hidden;
 	}
 
@@ -157,7 +196,7 @@
 	}
 
 	.setting-row + .setting-row {
-		border-top: 1rpx solid rgba(242, 231, 213, 0.92);
+		border-top: 1rpx solid var(--sk-border);
 	}
 
 	.setting-main {
@@ -167,7 +206,7 @@
 
 	.setting-title {
 		display: block;
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 28rpx;
 		font-weight: 600;
 	}
@@ -175,13 +214,32 @@
 	.setting-desc {
 		display: block;
 		margin-top: 10rpx;
-		color: #A08C77;
+		color: var(--sk-text-muted);
 		font-size: 22rpx;
 	}
 
 	.setting-value {
-		color: #A08C77;
+		color: var(--sk-text-muted);
 		font-size: 26rpx;
+	}
+
+	.skin-picker {
+		display: flex;
+		align-items: center;
+		gap: 20rpx;
+		flex-shrink: 0;
+	}
+
+	.skin-swatch {
+		width: 44rpx;
+		height: 44rpx;
+		border-radius: 50%;
+		transition: box-shadow 0.2s ease;
+	}
+
+	/* 选中项用当前皮肤强调色描环，与所选色块同色 */
+	.skin-swatch--active {
+		box-shadow: 0 0 0 4rpx var(--sk-accent);
 	}
 
 	.row-arrow {

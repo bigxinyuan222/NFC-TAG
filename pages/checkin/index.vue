@@ -1,5 +1,5 @@
 <template>
-	<view class="wrap">
+	<view class="wrap" :class="skinClass">
 		<view class="screen-shell">
 			<view class="hero-row">
 				<view class="hero-text">
@@ -58,9 +58,9 @@
 			</view>
 		</view>
 
-		<image class="bottom-decor" src="/static/decor-bottom.svg" mode="widthFix" />
+		<image class="bottom-decor" :src="decorSrc" mode="widthFix" />
 
-		<app-tabbar current="checkin" />
+		<app-tabbar current="checkin" :skin="skinClass" />
 
 		<checkin-result
 			:visible="resultVisible"
@@ -83,6 +83,7 @@
 	import { releaseNfcSubmissionLock } from '@/utils/nfc-checkin'
 	import { formatClockTime, formatDateText } from '@/utils/time'
 	import { getAvatarFrame, getAvatarFrameId } from '@/utils/avatar-frame'
+	import { getSkinClass, getSkinDecorSrc } from '@/utils/skin'
 
 	export default {
 		components: {
@@ -97,6 +98,8 @@
 				avatarLoadFailed: false,
 				avatarFrameId: 'default',
 				avatarFrameEntry: {},
+				skinClass: 'skin-sunny',
+				decorSrc: '/static/decor-bottom.svg',
 				timeText: '',
 				dateText: '',
 				summaryDateKey: '',
@@ -124,6 +127,8 @@
 		},
 		onShow() {
 			this.pageVisible = true
+			this.skinClass = getSkinClass()
+			this.decorSrc = getSkinDecorSrc()
 			const { userName, department, avatarUrl } = getSession()
 			this.userName = userName
 			this.department = department
@@ -332,7 +337,7 @@
 
 <style>
 	page {
-		background: #FDF6E9;
+		background: var(--sk-page-bg);
 	}
 
 	.wrap {
@@ -340,7 +345,7 @@
 		height: 100vh;
 		height: 100dvh;
 		padding: 24rpx 24rpx 112rpx;
-		background: linear-gradient(180deg, #FFF9EF 0%, #FDF3E4 60%, #FBEDD9 100%);
+		background: linear-gradient(180deg, var(--sk-bg-1) 0%, var(--sk-bg-2) 60%, var(--sk-bg-3) 100%);
 		box-sizing: border-box;
 		overflow: hidden;
 	}
@@ -379,13 +384,13 @@
 
 	.title {
 		display: block;
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 52rpx;
 		font-weight: 700;
 	}
 
 	.name {
-		color: #F59A23;
+		color: var(--sk-accent);
 	}
 
 	.dept-row {
@@ -401,7 +406,7 @@
 	}
 
 	.subtitle {
-		color: #A08C77;
+		color: var(--sk-text-muted);
 		font-size: 24rpx;
 	}
 
@@ -412,8 +417,8 @@
 		height: 88rpx;
 		margin-top: 8rpx;
 		border-radius: 50%;
-		background: rgba(255, 255, 255, 0.78);
-		box-shadow: 0 10rpx 24rpx rgba(212, 162, 94, 0.16);
+		background: var(--sk-card-4);
+		box-shadow: 0 10rpx 24rpx var(--sk-shadow-lg);
 		overflow: hidden;
 	}
 
@@ -435,7 +440,7 @@
 		height: 28rpx;
 		margin-left: -14rpx;
 		border-radius: 50%;
-		background: #F59A23;
+		background: var(--sk-accent);
 	}
 
 	.avatar-body {
@@ -446,7 +451,7 @@
 		height: 24rpx;
 		margin-left: -21rpx;
 		border-radius: 24rpx 24rpx 18rpx 18rpx;
-		background: #F59A23;
+		background: var(--sk-accent);
 	}
 
 	.center-panel {
@@ -457,14 +462,14 @@
 
 	.date-text {
 		display: block;
-		color: #A08C77;
+		color: var(--sk-text-muted);
 		font-size: 26rpx;
 	}
 
 	.time-text {
 		display: block;
 		margin-top: 8rpx;
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 70rpx;
 		font-weight: 700;
 	}
@@ -507,13 +512,13 @@
 	.pulse-ring-outer {
 		width: 500rpx;
 		height: 500rpx;
-		background: rgba(245, 154, 35, 0.07);
+		background: var(--sk-accent-tint-weak);
 	}
 
 	.pulse-ring-inner {
 		width: 400rpx;
 		height: 400rpx;
-		background: rgba(245, 154, 35, 0.12);
+		background: var(--sk-accent-tint);
 	}
 
 	.pulse-core {
@@ -528,8 +533,8 @@
 		height: 308rpx;
 		padding-top: 48rpx;
 		border-radius: 50%;
-		background: linear-gradient(180deg, #FFB84D 0%, #F59A23 100%);
-		box-shadow: 0 18rpx 44rpx rgba(245, 154, 35, 0.28);
+		background: linear-gradient(180deg, var(--sk-accent-light) 0%, var(--sk-accent) 100%);
+		box-shadow: 0 18rpx 44rpx var(--sk-accent-halo);
 	}
 
 	.pulse-icon {
@@ -562,13 +567,13 @@
 	.tip-dot {
 		width: 18rpx;
 		height: 18rpx;
-		border: 4rpx solid #FFCF8A;
+		border: 4rpx solid var(--sk-accent-ring);
 		border-radius: 50%;
-		box-shadow: 0 0 0 8rpx rgba(255, 184, 77, 0.22);
+		box-shadow: 0 0 0 8rpx var(--sk-accent-halo-soft);
 	}
 
 	.tip {
-		color: #D9871A;
+		color: var(--sk-accent-deep);
 		font-size: 30rpx;
 		font-weight: 600;
 	}
@@ -577,9 +582,9 @@
 		margin-top: 60rpx;
 		padding: 22rpx 22rpx 28rpx;
 		border-radius: 30rpx;
-		background: rgba(255, 255, 255, 0.96);
-		border: 1rpx solid rgba(242, 231, 213, 0.92);
-		box-shadow: 0 18rpx 50rpx rgba(212, 162, 94, 0.12);
+		background: var(--sk-card-2);
+		border: 1rpx solid var(--sk-border);
+		box-shadow: 0 18rpx 50rpx var(--sk-shadow);
 		flex-shrink: 0;
 	}
 
@@ -597,13 +602,13 @@
 	}
 
 	.records-title {
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 30rpx;
 		font-weight: 700;
 	}
 
 	.records-side {
-		color: #A08C77;
+		color: var(--sk-text-muted);
 		font-size: 24rpx;
 	}
 
@@ -623,19 +628,19 @@
 	}
 
 	.record-label {
-		color: #4A3D2E;
+		color: var(--sk-text-2);
 		font-size: 25rpx;
 	}
 
 	.record-value {
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 32rpx;
 		font-weight: 600;
 		flex-shrink: 0;
 	}
 
 	.muted-text {
-		color: #B9A88F;
+		color: var(--sk-text-faint);
 	}
 
 	.records-side {
