@@ -33,11 +33,15 @@ function getAndroidNfc() {
 	if (!adapter) return { error: '当前设备不支持 NFC' }
 	if (!adapter.isEnabled()) return { error: '请先在系统设置中开启 NFC' }
 	return { activity, adapter, NfcAdapter }
+	// #endif
+	return { error: '非 APP-PLUS 平台' }
 }
 
 function clearCurrentIntent(activity) {
+	// #ifdef APP-PLUS
 	const Intent = plus.android.importClass('android.content.Intent')
 	activity.setIntent(new Intent())
+	// #endif
 }
 
 export function readTagFromCurrentIntent() {
@@ -64,6 +68,8 @@ export function readTagFromCurrentIntent() {
 		uid += (Number(bytes[index]) & 0xff).toString(16).padStart(2, '0')
 	}
 	return uid.toUpperCase()
+	// #endif
+	return null
 }
 
 function readCurrentTag() {
@@ -105,6 +111,8 @@ export function startNfcScan(handler) {
 	plus.globalEvent.addEventListener('newintent', handleNewIntent)
 	setTimeout(dispatchCurrentTag, 100)
 	return { supported: true }
+	// #endif
+	return { error: '非 APP-PLUS 平台' }
 }
 
 export function stopNfcScan() {
