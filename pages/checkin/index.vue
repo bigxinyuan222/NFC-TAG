@@ -9,7 +9,7 @@
 						<text class="subtitle">{{ department }}</text>
 					</view>
 				</view>
-				<view class="avatar" :class="avatarFrameClass" @tap="previewAvatar" @longpress="logout">
+				<view class="avatar" :class="avatarFrameClass" @tap="previewAvatar">
 					<image v-if="avatarUrl && !avatarLoadFailed" class="avatar-image" :src="avatarUrl" mode="aspectFill" @error="handleAvatarError" />
 					<view v-else class="avatar-fallback">
 						<view class="avatar-head"></view>
@@ -77,7 +77,7 @@
 	import AppTabbar from '@/components/app-tabbar/index.vue'
 	import CheckinResult from '@/components/checkin-result/index.vue'
 	import { clearSession, consumeNfcRescanRequired, consumePendingNfcTag, getSession, hasSession } from '@/utils/session'
-	import { getCheckinWindowStatus, getTodayCheckinSummary, hasCheckedInCurrentWindow, saveCheckinRecord } from '@/utils/checkin-record'
+	import { getCheckinWindowStatus, getTodayCheckinSummary, saveCheckinRecord } from '@/utils/checkin-record'
 	import { submitCheckin as submitCheckinRequest } from '@/api/checkin'
 	import { NFC_CHECKIN_POINT_ID } from '@/utils/nfc-config'
 	import { releaseNfcSubmissionLock } from '@/utils/nfc-checkin'
@@ -152,10 +152,10 @@
 				}, 350)
 			}
 			uni.$on('checkin-window-denied', this.handleCheckinDenied)
-			const pendingDenied = uni.getStorageSync('pendingCheckinDenied')
-			if (pendingDenied) {
+			const pendingCheckinDenied = uni.getStorageSync('pendingCheckinDenied')
+			if (pendingCheckinDenied) {
 				uni.removeStorageSync('pendingCheckinDenied')
-				this.handleCheckinDenied(typeof pendingDenied === 'object' ? pendingDenied : null)
+				this.handleCheckinDenied(pendingCheckinDenied)
 			}
 		},
 		onHide() {
@@ -215,13 +215,15 @@
 					this.timer = null
 				}
 			},
-			logout() {
-				clearSession()
-				this.goLogin()
+			previewAvatar() {
+				if (this.avatarLoadFailed || !this.avatarUrl) return
+				uni.previewImage({
+					urls: [this.avatarUrl]
+				})
 			},
 			handleNfcTag(tag) {
 				if (this.isCheckingIn) {
-					releaseNfcSubmissionLock()
+					uni.showToast({ title: '正在处理本次打卡', icon: 'none' })
 					return
 				}
 				this.requiresNfcRescan = false
@@ -229,11 +231,6 @@
 				if (!windowStatus.allowed) {
 					releaseNfcSubmissionLock()
 					this.handleCheckinDenied()
-					return
-				}
-				if (hasCheckedInCurrentWindow({ userName: this.userName, department: this.department })) {
-					releaseNfcSubmissionLock()
-					this.handleCheckinDenied({ message: '该时间已打过卡' })
 					return
 				}
 				this.submitCheckin({
@@ -252,8 +249,8 @@
 
 				try {
 					if (!payload.pointId) {
-					throw new Error('未识别到有效的打卡点，喵')
-				}
+						throw new Error('未识别到有效的打卡点')
+					}
 
 					const result = await submitCheckinRequest({
 						pointId: payload.pointId,
@@ -277,7 +274,7 @@
 						})
 					}
 				} catch (e) {
-				message = e && (e.message || e.errMsg) ? (e.message || e.errMsg) : '网络失败，喵'
+					message = e && (e.message || e.errMsg) ? (e.message || e.errMsg) : '网络请求失败'
 					console.error('[打卡失败原因]', message)
 					console.error('[打卡失败]', {
 						pointId: payload.pointId || '',
@@ -317,15 +314,8 @@
 					this.resultVisible = false
 				},
 				handleAvatarError() {
-				this.avatarLoadFailed = true
-			},
-			previewAvatar() {
-				if (!this.avatarUrl || this.avatarLoadFailed) return
-				uni.previewImage({
-					urls: [this.avatarUrl],
-					current: this.avatarUrl
-				})
-			}
+					this.avatarLoadFailed = true
+				}
 		}
 	}
 </script>
@@ -339,7 +329,7 @@
 		position: relative;
 		height: 100vh;
 		height: 100dvh;
-		padding: 24rpx 24rpx 112rpx;
+		padding: 24rpx 24rpx calc(124rpx + env(safe-area-inset-bottom));
 		background: linear-gradient(180deg, #FFF9EF 0%, #FDF3E4 60%, #FBEDD9 100%);
 		box-sizing: border-box;
 		overflow: hidden;
@@ -369,7 +359,7 @@
 		align-items: flex-start;
 		justify-content: space-between;
 		gap: 24rpx;
-		margin-top: 100rpx;
+		margin-top: calc(var(--status-bar-height) + 36rpx);
 	}
 
 	.hero-text {
@@ -605,6 +595,7 @@
 	.records-side {
 		color: #A08C77;
 		font-size: 24rpx;
+		line-height: 1.4;
 	}
 
 	.record-row {
@@ -636,9 +627,5 @@
 
 	.muted-text {
 		color: #B9A88F;
-	}
-
-	.records-side {
-		line-height: 1.4;
 	}
 </style>

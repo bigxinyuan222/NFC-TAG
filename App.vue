@@ -2,7 +2,7 @@
 	import { clearSession, hasSession, requireNfcRescan, setPendingNfcTag } from './utils/session'
 	import { acquireNfcSubmissionLock, readTagFromCurrentIntent, releaseNfcSubmissionLock, startNfcScan, stopNfcScan } from './utils/nfc-checkin'
 	import { submitCheckin } from './api/checkin'
-	import { getCheckinWindowStatus, hasCheckedInCurrentWindow } from './utils/checkin-record'
+	import { getCheckinWindowStatus } from './utils/checkin-record'
 	import { NFC_CHECKIN_POINT_ID } from './utils/nfc-config'
 	import { getSession } from './utils/session'
 
@@ -50,11 +50,7 @@
 				}
 				const windowStatus = getCheckinWindowStatus()
 				if (!windowStatus.allowed) {
-					this.showCheckinDenied('不在打卡时间范围内')
-					return
-				}
-				if (hasCheckedInCurrentWindow(getSession())) {
-					this.showCheckinDenied('该时间已打过卡')
+					this.showCheckinDenied()
 					return
 				}
 				if (!acquireNfcSubmissionLock()) {
@@ -67,16 +63,15 @@
 				})
 			},
 
-			showCheckinDenied(message) {
-				const deniedMessage = message || '不在打卡时间范围内'
+			showCheckinDenied() {
 				const pages = getCurrentPages()
 				const current = pages[pages.length - 1]
 				if (current && current.route === 'pages/checkin/index') {
 					// 已在打卡页：直接通知当前页弹窗，避免跳页
-					uni.$emit('checkin-window-denied', { message: deniedMessage })
+					uni.$emit('checkin-window-denied')
 					return
 				}
-				uni.setStorageSync('pendingCheckinDenied', { message: deniedMessage })
+				uni.setStorageSync('pendingCheckinDenied', true)
 				uni.reLaunch({
 					url: '/pages/checkin/index'
 				})
@@ -98,10 +93,6 @@
 					const windowStatus = getCheckinWindowStatus()
 					if (!windowStatus.allowed) {
 						this.showLocalNotification('打卡失败', '不在打卡时间范围内')
-						return
-					}
-					if (hasCheckedInCurrentWindow(getSession())) {
-						this.showLocalNotification('打卡失败', '该时间已打过卡')
 						return
 					}
 					const result = await submitCheckin({

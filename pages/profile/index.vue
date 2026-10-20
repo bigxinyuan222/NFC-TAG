@@ -7,7 +7,7 @@
 			<view class="top-glow"></view>
 
 			<view class="profile-head">
-				<view class="avatar-shell" :class="avatarFrameClass" @tap="openFramePicker">
+				<view class="avatar-shell" :class="avatarFrameClass" @tap="previewAvatar" @longpress="openFramePicker">
 					<image class="avatar-image" :src="avatarLoadFailed || !avatarUrl ? '/static/icons/avatar-default.svg' : avatarUrl" mode="aspectFill" @error="handleAvatarError" />
 					<image v-if="avatarFrameOverlay" class="avatar-frame-overlay" :src="avatarFrameOverlay" mode="aspectFit" />
 				</view>
@@ -27,7 +27,7 @@
 				</view>
 			</view>
 
-			<view class="logout-card" @tap="handleLogout">
+			<view class="logout-card" @tap="openLogoutModal">
 				<text class="logout-text">退出登录</text>
 			</view>
 
@@ -47,6 +47,21 @@
 						</view>
 					</view>
 					<text class="frame-option-name" :class="{ 'frame-option-name--active': avatarFrameId === item.id }">{{ item.name }}</text>
+				</view>
+			</view>
+		</view>
+
+		<view v-if="showLogoutModal" class="logout-modal-mask" @tap="closeLogoutModal">
+			<view class="logout-modal-card" @tap.stop>
+				<text class="logout-modal-title">提示</text>
+				<text class="logout-modal-message">确定要退出登录吗？</text>
+				<view class="logout-modal-actions">
+					<view class="logout-modal-btn logout-modal-btn-cancel" @tap="closeLogoutModal">
+						<text class="logout-modal-btn-cancel-text">取消</text>
+					</view>
+					<view class="logout-modal-btn logout-modal-btn-confirm" @tap="confirmLogout">
+						<text class="logout-modal-btn-confirm-text">退出</text>
+					</view>
 				</view>
 			</view>
 		</view>
@@ -74,10 +89,10 @@
 				avatarFrameEntry: AVATAR_FRAMES[0],
 				avatarFrames: AVATAR_FRAMES,
 				framePickerVisible: false,
+				showLogoutModal: false,
 				menuItems: [
 					{ key: 'profile', label: '个人信息', icon: '/static/icons/menu-user.svg', tint: 'rgba(245, 154, 35, 0.14)' },
 					{ key: 'security', label: '账号与安全', icon: '/static/icons/menu-shield.svg', tint: 'rgba(95, 169, 122, 0.16)' },
-					{ key: 'setting', label: '系统设置', icon: '/static/icons/menu-settings.svg', tint: 'rgba(107, 143, 216, 0.16)' },
 					{ key: 'about', label: '关于我们', icon: '/static/icons/menu-about.svg', tint: 'rgba(176, 124, 212, 0.16)' }
 				]
 			}
@@ -95,8 +110,8 @@
 			const { userName, department, avatarUrl } = session
 			this.userName = userName
 			this.department = department
-				this.avatarUrl = avatarUrl
-				this.avatarLoadFailed = false
+			this.avatarUrl = avatarUrl
+			this.avatarLoadFailed = false
 			this.avatarFrameId = getAvatarFrameId(session)
 			this.avatarFrameEntry = getAvatarFrame(session)
 
@@ -120,13 +135,6 @@
 					return
 				}
 
-				if (item.key === 'setting') {
-					uni.navigateTo({
-						url: '/pages/settings/index'
-					})
-					return
-				}
-
 				if (item.key === 'about') {
 					uni.navigateTo({
 						url: '/pages/about/index'
@@ -139,33 +147,38 @@
 					icon: 'none'
 				})
 			},
-			handleLogout() {
-				uni.showModal({
-					title: '提示',
-					content: '确定要退出登录吗？',
-					success: (res) => {
-						if (res.confirm) {
-							clearSession()
-							this.goLogin()
-						}
-					}
+			openLogoutModal() {
+				this.showLogoutModal = true
+			},
+			closeLogoutModal() {
+				this.showLogoutModal = false
+			},
+			confirmLogout() {
+				this.showLogoutModal = false
+				clearSession()
+				this.goLogin()
+			},
+			previewAvatar() {
+				if (this.avatarLoadFailed || !this.avatarUrl) return
+				uni.previewImage({
+					urls: [this.avatarUrl]
 				})
 			},
-				handleAvatarError() {
-					this.avatarLoadFailed = true
-				},
-				openFramePicker() {
-					this.framePickerVisible = true
-				},
-				closeFramePicker() {
-					this.framePickerVisible = false
-				},
-				selectFrame(frameId) {
-					setAvatarFrameId(getSession(), frameId)
-					this.avatarFrameId = frameId
-					this.avatarFrameEntry = getAvatarFrame(getSession())
-					this.framePickerVisible = false
-				}
+			handleAvatarError() {
+				this.avatarLoadFailed = true
+			},
+			openFramePicker() {
+				this.framePickerVisible = true
+			},
+			closeFramePicker() {
+				this.framePickerVisible = false
+			},
+			selectFrame(frameId) {
+				setAvatarFrameId(getSession(), frameId)
+				this.avatarFrameId = frameId
+				this.avatarFrameEntry = getAvatarFrame(getSession())
+				this.framePickerVisible = false
+			}
 		}
 	}
 </script>
@@ -209,7 +222,7 @@
 		z-index: 1;
 		height: 100%;
 		box-sizing: border-box;
-		padding: 36rpx 32rpx 170rpx;
+		padding: 36rpx 32rpx calc(170rpx + env(safe-area-inset-bottom));
 	}
 
 	.top-glow {
@@ -424,6 +437,80 @@
 
 	.frame-option-name--active {
 		color: #F59A23;
+		font-weight: 600;
+	}
+
+	.logout-modal-mask {
+		position: fixed;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 999;
+		background: rgba(30, 22, 12, 0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.logout-modal-card {
+		width: 600rpx;
+		max-width: 88vw;
+		padding: 40rpx 32rpx 32rpx;
+		box-sizing: border-box;
+		border-radius: 32rpx;
+		background: rgba(255, 255, 255, 0.98);
+		box-shadow: 0 18rpx 50rpx rgba(60, 40, 15, 0.18);
+		text-align: center;
+	}
+
+	.logout-modal-title {
+		display: block;
+		color: #3D3226;
+		font-size: 32rpx;
+		font-weight: 600;
+	}
+
+	.logout-modal-message {
+		display: block;
+		margin-top: 22rpx;
+		color: #7A6650;
+		font-size: 28rpx;
+		line-height: 1.6;
+	}
+
+	.logout-modal-actions {
+		display: flex;
+		gap: 20rpx;
+		margin-top: 36rpx;
+	}
+
+	.logout-modal-btn {
+		flex: 1;
+		height: 84rpx;
+		border-radius: 20rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.logout-modal-btn-cancel {
+		background: #F5EBDC;
+	}
+
+	.logout-modal-btn-cancel-text {
+		color: #7A6650;
+		font-size: 28rpx;
+		font-weight: 600;
+	}
+
+	.logout-modal-btn-confirm {
+		background: linear-gradient(135deg, #FFB84D 0%, #F59A23 100%);
+	}
+
+	.logout-modal-btn-confirm-text {
+		color: #ffffff;
+		font-size: 28rpx;
 		font-weight: 600;
 	}
 

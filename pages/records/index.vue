@@ -1,6 +1,6 @@
 <template>
 	<view class="wrap">
-		<scroll-view class="scroll" scroll-y :refresher-enabled="true" :refresher-triggered="isRefreshing" @refresherrefresh="handleRefresh">
+		<scroll-view class="scroll" scroll-y :refresher-enabled="true" refresher-background="transparent" :refresher-triggered="isRefreshing" @refresherrefresh="handleRefresh">
 			<view class="header-row">
 				<text class="page-title">打卡记录</text>
 				<image class="header-icon" src="/static/icons/clipboard.svg" mode="aspectFit" />
@@ -160,7 +160,6 @@
 				this.remoteComplete = false
 				this.recordSource = 'remote'
 				this.errorMessage = ''
-				this.recordList = []
 				this.isLoading = true
 				this.isRefreshing = isRefresh
 				this.refreshSelectedDate()
@@ -261,7 +260,7 @@
 		z-index: 1;
 		height: 100%;
 		box-sizing: border-box;
-		padding: 156rpx 30rpx 132rpx;
+		padding: calc(var(--status-bar-height) + 68rpx) 30rpx calc(132rpx + env(safe-area-inset-bottom));
 	}
 
 	.header-row,

@@ -71,11 +71,11 @@
 				},
 				departmentOptions: ['27鹰飞', '26鹰飞', '全栈二期', 'ROS机器人'],
 				departmentIndex: 0,
-				isLoginMode: false,
+				isLoginMode: true,
 				isSubmitting: false
 			}
 		},
-			onShow() {
+		onShow() {
 			if (hasSession()) {
 				this.goCheckin()
 				return
@@ -172,6 +172,7 @@
 						response: result
 					})
 					this.saveUserSession(result)
+					uni.showToast({ title: '注册成功', icon: 'success' })
 					this.goCheckin()
 				} catch (error) {
 					console.error('[注册失败]', {
@@ -265,7 +266,7 @@
 		flex-direction: column;
 		height: 100vh;
 		height: 100dvh;
-		padding: 100rpx 28rpx 24rpx;
+		padding: calc(var(--status-bar-height) + 12rpx) 28rpx 24rpx;
 		overflow: hidden;
 		background: linear-gradient(180deg, #FFF9EF 0%, #FDF3E4 60%, #FBEDD9 100%);
 		box-sizing: border-box;

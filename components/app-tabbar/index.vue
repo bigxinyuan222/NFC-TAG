@@ -43,7 +43,7 @@
 					return
 				}
 
-				uni.reLaunch({
+				uni.redirectTo({
 					url: TAB_MAP[name]
 				})
 			}
