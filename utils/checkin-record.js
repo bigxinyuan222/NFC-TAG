@@ -87,6 +87,21 @@ export function getCheckinWindowStatus(date = new Date(), slots = CHECKIN_SLOTS)
 	return { allowed: !!active, slot: active }
 }
 
+// 重复打卡判断：当前打卡窗口（班次点前30分钟）内是否已有本地成功记录
+// 注意：仅基于本机存储，换设备/清缓存后失效，彻底去重需后端判断
+export function hasCheckedInCurrentWindow(session, date = new Date(), slots = CHECKIN_SLOTS) {
+	const status = getCheckinWindowStatus(date, slots)
+	if (!status.allowed || !status.slot) return false
+	const scheduled = getSlotTime(date, status.slot)
+	const start = scheduled - CHECKIN_ADVANCE_MINUTES * 60 * 1000
+	return getUserCheckinRecords(session).some((record) => {
+		return record.status === 'success'
+			&& Number.isFinite(record.time)
+			&& record.time >= start
+			&& record.time <= scheduled
+	})
+}
+
 function getSlotForRecordTime(date, slots = CHECKIN_SLOTS) {
 	return getCurrentCheckinSlot(date, slots)
 }
