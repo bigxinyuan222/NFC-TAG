@@ -33,26 +33,18 @@
 				</view>
 				<text class="setting-value">v{{ version }}</text>
 			</view>
-			<view class="setting-row" @tap="checkUpdate">
-				<view class="setting-main">
-					<text class="setting-title">检查更新</text>
-					<text class="setting-desc">获取最新版本</text>
-				</view>
-				<image class="row-arrow" src="/static/icons/menu-chevron-right.svg" mode="aspectFit" />
-			</view>
 		</view>
 	</view>
 </template>
 
 <script>
-	import { APP_VERSION } from '@/utils/config'
+	import { getAppVersion } from '@/utils/config'
 	import { SKINS, getSkin, saveSkinId } from '@/utils/skin'
 
 	export default {
 		data() {
 			return {
-				version: APP_VERSION,
-				checking: false,
+				version: getAppVersion(),
 				skinOptions: SKINS,
 				skinId: 'sunny',
 				skinClass: 'skin-sunny'
@@ -85,53 +77,6 @@
 							url: '/pages/profile/index'
 						})
 					}
-				})
-			},
-			checkUpdate() {
-				if (this.checking) return
-				const updateManager = uni.getUpdateManager && uni.getUpdateManager()
-
-				if (!updateManager) {
-					uni.showToast({
-						title: '当前已是最新版本',
-						icon: 'none'
-					})
-					return
-				}
-
-				this.checking = true
-				uni.showLoading({
-					title: '检查更新中',
-					mask: true
-				})
-				updateManager.onCheckForUpdate((res) => {
-					uni.hideLoading()
-					this.checking = false
-					if (!res.hasUpdate) {
-						uni.showToast({
-							title: '当前已是最新版本',
-							icon: 'none'
-						})
-					}
-				})
-				updateManager.onUpdateReady(() => {
-					uni.hideLoading()
-					this.checking = false
-					uni.showModal({
-						title: '发现新版本',
-						content: '新版本已下载完成，是否立即重启应用？',
-						success: (res) => {
-							if (res.confirm) updateManager.applyUpdate()
-						}
-					})
-				})
-				updateManager.onUpdateFailed(() => {
-					uni.hideLoading()
-					this.checking = false
-					uni.showToast({
-						title: '新版本下载失败，请稍后重试',
-						icon: 'none'
-					})
 				})
 			}
 		}
@@ -245,11 +190,5 @@
 	/* 选中项用当前皮肤强调色描环，与所选色块同色 */
 	.skin-swatch--active {
 		box-shadow: 0 0 0 4rpx var(--sk-accent);
-	}
-
-	.row-arrow {
-		width: 34rpx;
-		height: 34rpx;
-		flex-shrink: 0;
 	}
 </style>

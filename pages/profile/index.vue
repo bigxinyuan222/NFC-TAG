@@ -12,7 +12,7 @@
 					<image v-if="avatarFrameOverlay" class="avatar-frame-overlay" :src="avatarFrameOverlay" mode="aspectFit" />
 				</view>
 				<text class="profile-name">{{ userName }}</text>
-				<text class="profile-meta">{{ department }}</text>
+				<text class="profile-meta">{{ displayDepartment }}</text>
 			</view>
 
 			<view class="menu-card">
@@ -74,6 +74,7 @@
 	import AppTabbar from '@/components/app-tabbar/index.vue'
 	import { clearSession, getSession } from '@/utils/session'
 	import { AVATAR_FRAMES, getAvatarFrame, getAvatarFrameId, setAvatarFrameId } from '@/utils/avatar-frame'
+	import { getDisplayDepartment } from '@/utils/config'
 	import { getSkinClass } from '@/utils/skin'
 
 	export default {
@@ -101,6 +102,9 @@
 			}
 		},
 		computed: {
+			displayDepartment() {
+				return getDisplayDepartment(this.department)
+			},
 			avatarFrameClass() {
 				return this.avatarFrameEntry.className
 			},

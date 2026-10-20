@@ -6,7 +6,7 @@
 					<text class="title">你好，<text class="name">{{ userName }}</text></text>
 					<view class="dept-row">
 						<image class="dept-icon" src="/static/icons/building.svg" mode="aspectFit" />
-						<text class="subtitle">{{ department }}</text>
+						<text class="subtitle">{{ displayDepartment }}</text>
 					</view>
 				</view>
 				<view class="avatar" :class="avatarFrameClass" @tap="previewAvatar">
@@ -85,6 +85,7 @@
 	import { releaseNfcSubmissionLock } from '@/utils/nfc-checkin'
 	import { formatClockTime, formatDateText } from '@/utils/time'
 	import { getAvatarFrame, getAvatarFrameId } from '@/utils/avatar-frame'
+	import { getDisplayDepartment } from '@/utils/config'
 	import { getSkinClass, getSkinDecorSrc } from '@/utils/skin'
 
 	export default {
@@ -120,6 +121,9 @@
 			}
 		},
 		computed: {
+			displayDepartment() {
+				return getDisplayDepartment(this.department)
+			},
 			avatarFrameClass() {
 				return this.avatarFrameEntry.className || ''
 			},

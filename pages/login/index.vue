@@ -68,6 +68,7 @@
 <script>
 	import { getSession, hasSession, saveSession } from '@/utils/session'
 	import { registerAccount, loginAccount } from '@/api/auth'
+	import { DEPARTMENT_OPTIONS } from '@/utils/config'
 
 	export default {
 		data() {
@@ -78,7 +79,7 @@
 					phone: '',
 					password: ''
 				},
-				departmentOptions: ['27鹰飞', '26鹰飞', '全栈二期', 'ROS机器人'],
+				departmentOptions: DEPARTMENT_OPTIONS,
 				departmentIndex: 0,
 				isLoginMode: true,
 				isSubmitting: false

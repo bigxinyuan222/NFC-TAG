@@ -77,7 +77,7 @@ export function getCurrentCheckinSlot(date = new Date(), slots = CHECKIN_SLOTS) 
 export const CHECKIN_ADVANCE_MINUTES = 30
 
 // 打卡时间窗开关：测试期间临时放开限制，后续恢复改回 true 即可
-export const CHECKIN_TIME_LIMIT_ENABLED = false
+export const CHECKIN_TIME_LIMIT_ENABLED = true
 
 // 打卡时间窗：仅目标时间点前30分钟内可打，到点即止，其余时间一律拒绝
 export function getCheckinWindowStatus(date = new Date(), slots = CHECKIN_SLOTS) {
