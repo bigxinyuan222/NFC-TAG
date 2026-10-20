@@ -1,5 +1,5 @@
 <template>
-	<view class="wrap">
+	<view class="wrap" :class="skinClass">
 		<scroll-view class="scroll" scroll-y :refresher-enabled="true" :refresher-triggered="isRefreshing" @refresherrefresh="handleRefresh">
 			<view class="header-row">
 				<text class="page-title">打卡记录</text>
@@ -54,9 +54,9 @@
 			</view>
 		</scroll-view>
 
-		<image class="bottom-decor" src="/static/decor-bottom.svg" mode="widthFix" />
+		<image class="bottom-decor" :src="decorSrc" mode="widthFix" />
 
-		<app-tabbar current="records" />
+		<app-tabbar current="records" :skin="skinClass" />
 	</view>
 </template>
 
@@ -65,6 +65,7 @@
 	import { getUserCheckinRecords, normalizeRemoteCheckinRecords } from '@/utils/checkin-record'
 	import { getMyCheckins } from '@/api/checkin'
 	import { clearSession, getSession } from '@/utils/session'
+	import { getSkinClass, getSkinDecorSrc } from '@/utils/skin'
 
 	function formatDateKey(date) {
 		const year = date.getFullYear()
@@ -108,7 +109,9 @@
 				isLoading: false,
 				isRefreshing: false,
 				requestVersion: 0,
-				errorMessage: ''
+				errorMessage: '',
+				skinClass: 'skin-sunny',
+				decorSrc: '/static/decor-bottom.svg'
 			}
 		},
 		computed: {
@@ -132,6 +135,8 @@
 			}
 		},
 		onShow() {
+			this.skinClass = getSkinClass()
+			this.decorSrc = getSkinDecorSrc()
 			const { userName, department } = getSession()
 			this.userName = userName
 			this.department = department
@@ -235,7 +240,7 @@
 
 <style>
 	page {
-		background: #FDF6E9;
+		background: var(--sk-page-bg);
 	}
 
 	.wrap {
@@ -243,7 +248,7 @@
 		height: 100vh;
 		height: 100dvh;
 		overflow: hidden;
-		background: linear-gradient(180deg, #FFF9EF 0%, #FDF3E4 60%, #FBEDD9 100%);
+		background: linear-gradient(180deg, var(--sk-bg-1) 0%, var(--sk-bg-2) 60%, var(--sk-bg-3) 100%);
 	}
 
 	.bottom-decor {
@@ -287,7 +292,7 @@
 	}
 
 	.page-title {
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 40rpx;
 		font-weight: 700;
 		line-height: 1.2;
@@ -302,8 +307,8 @@
 	.stats-card,
 	.schedule-card {
 		background: rgba(255, 255, 255, 0.98);
-		border: 1rpx solid rgba(242, 231, 213, 0.92);
-		box-shadow: 0 12rpx 30rpx rgba(212, 162, 94, 0.10);
+		border: 1rpx solid var(--sk-border);
+		box-shadow: 0 12rpx 30rpx var(--sk-shadow-sm);
 	}
 
 	.stats-card {
@@ -316,7 +321,7 @@
 	}
 
 	.stats-title {
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 27rpx;
 		font-weight: 700;
 	}
@@ -340,18 +345,18 @@
 	}
 
 	.stat-num {
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 48rpx;
 		font-weight: 700;
 		line-height: 1;
 	}
 
 	.stat-primary {
-		color: #F59A23;
+		color: var(--sk-accent);
 	}
 
 	.stat-label {
-		color: #A08C77;
+		color: var(--sk-text-muted);
 		font-size: 21rpx;
 	}
 
@@ -391,7 +396,7 @@
 	}
 
 	.date-text {
-		color: #8A7660;
+		color: var(--sk-text-4);
 		font-size: 23rpx;
 		font-weight: 600;
 		white-space: nowrap;
@@ -411,19 +416,19 @@
 	}
 
 	.schedule-title {
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 27rpx;
 		font-weight: 700;
 	}
 
 	.schedule-date {
-		color: #A08C77;
+		color: var(--sk-text-muted);
 		font-size: 21rpx;
 	}
 
 	.schedule-row {
 		min-height: 106rpx;
-		border-top: 1rpx solid #F2E7D5;
+		border-top: 1rpx solid var(--sk-line);
 	}
 
 	.schedule-left {
@@ -438,18 +443,18 @@
 	}
 
 	.schedule-name {
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 26rpx;
 		font-weight: 600;
 	}
 
 	.schedule-status {
-		color: #A08C77;
+		color: var(--sk-text-muted);
 		font-size: 23rpx;
 	}
 
 	.schedule-checked {
-		color: #F59A23;
+		color: var(--sk-accent);
 		font-weight: 600;
 	}
 
@@ -468,7 +473,7 @@
 	}
 
 	.record-empty-text {
-		color: #A08C77;
+		color: var(--sk-text-muted);
 		font-size: 23rpx;
 	}
 
@@ -477,7 +482,7 @@
 		width: 640rpx;
 		max-width: 100%;
 		margin: 12rpx auto 0;
-		color: #A08C77;
+		color: var(--sk-text-muted);
 		font-size: 22rpx;
 		text-align: center;
 	}

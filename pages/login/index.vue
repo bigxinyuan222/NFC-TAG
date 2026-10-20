@@ -39,6 +39,14 @@
 					</picker>
 				</view>
 
+				<view v-if="!isLoginMode" class="field">
+					<text class="label">手机号</text>
+					<view class="input-wrap">
+						<image class="input-icon" src="/static/icons/phone.svg" mode="aspectFit" />
+						<input class="input" type="number" maxlength="11" :value="form.phone" @input="handlePhoneInput" placeholder="请输入手机号" placeholder-class="input-placeholder" />
+					</view>
+				</view>
+
 				<view class="submit-btn" @tap.stop="handleSubmit">{{ isLoginMode ? '登录' : '注册' }}</view>
 				<view class="switch-login" @tap.stop="handleSwitchMode">
 					<text class="switch-tip">{{ isLoginMode ? '还没有账号？' : '已有账号？' }}</text>
@@ -67,6 +75,7 @@
 				form: {
 					userName: '',
 					department: '',
+					phone: '',
 					password: ''
 				},
 				departmentOptions: ['27鹰飞', '26鹰飞', '全栈二期', 'ROS机器人'],
@@ -129,6 +138,9 @@
 			handlePasswordInput(event) {
 				this.form.password = event.detail.value
 			},
+			handlePhoneInput(event) {
+				this.form.phone = event.detail.value
+			},
 			switchToLogin() {
 				this.form.password = ''
 				this.isLoginMode = true
@@ -146,9 +158,10 @@
 
 				const userName = (this.form.userName || '').trim()
 				const department = (this.form.department || '').trim()
+				const phone = (this.form.phone || '').trim()
 				const password = (this.form.password || '').trim()
 
-				if (!userName || !department || !password) {
+				if (!userName || !department || !phone || !password) {
 					uni.showToast({
 						title: '请填写完整信息',
 						icon: 'none'
@@ -162,13 +175,21 @@
 					})
 					return
 				}
+				if (!/^1\d{10}$/.test(phone)) {
+					uni.showToast({
+						title: '请输入正确的手机号',
+						icon: 'none'
+					})
+					return
+				}
 
 				this.isSubmitting = true
 				try {
-					const result = await registerAccount({ userName, department, password })
+					const result = await registerAccount({ userName, department, phone, password })
 					console.log('[注册成功]', {
 						userName,
 						department,
+						phone,
 						response: result
 					})
 					this.saveUserSession(result)
@@ -279,7 +300,7 @@
 		flex-direction: column;
 		justify-content: center;
 		padding-top: 0rpx;
-		padding-bottom: 80rpx;
+		padding-bottom: 56rpx;
 	}
 
 	.wrap::before,
@@ -305,20 +326,20 @@
 
 	.hero {
 		position: relative;
-		margin-top: 60rpx;
+		margin-top: 36rpx;
 		flex-shrink: 0;
 		text-align: center;
 	}
 
 	.hero-img {
 		display: block;
-		width: 460rpx;
+		width: 400rpx;
 		margin: 0 auto;
 	}
 
 	.card {
 		position: relative;
-		margin-top: 80rpx;
+		margin-top: 56rpx;
 		padding: 34rpx 32rpx 30rpx;
 		margin-left: 18rpx;
 		margin-right: 18rpx;
@@ -329,7 +350,7 @@
 	}
 
 	.field + .field {
-		margin-top: 60rpx;
+		margin-top: 36rpx;
 	}
 
 	.label {
@@ -396,7 +417,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		margin-top: 60rpx;
+		margin-top: 44rpx;
 		height: 84rpx;
 		border-radius: 42rpx;
 		background: linear-gradient(135deg, #FFB84D 0%, #F59A23 100%);
@@ -410,7 +431,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		margin-top: 26rpx;
+		margin-top: 22rpx;
 		font-size: 24rpx;
 	}
 

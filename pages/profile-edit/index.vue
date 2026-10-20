@@ -1,5 +1,5 @@
 <template>
-	<view class="wrap">
+	<view class="wrap" :class="skinClass">
 		<view class="nav-bar">
 			<view class="status-bar"></view>
 			<view class="nav-row">
@@ -77,6 +77,7 @@
 <script>
 	import { changePassword } from '@/api/auth'
 	import { clearSession, getSession, saveSession } from '@/utils/session'
+	import { getSkinClass } from '@/utils/skin'
 
 	export default {
 		data() {
@@ -95,10 +96,12 @@
 					confirmPassword: ''
 				},
 				showPasswordModal: false,
-				isChangingPassword: false
+				isChangingPassword: false,
+				skinClass: 'skin-sunny'
 			}
 		},
 		onShow() {
+			this.skinClass = getSkinClass()
 			const { userName, department, avatarUrl } = getSession()
 			this.avatarLoadFailed = false
 			this.form.userName = userName
@@ -230,7 +233,7 @@
 
 <style>
 	page {
-		background: #FDF6E9;
+		background: var(--sk-page-bg);
 	}
 
 	.wrap {
@@ -238,7 +241,7 @@
 		flex-direction: column;
 		height: 100vh;
 		height: 100dvh;
-		background: linear-gradient(180deg, #FFF9EF 0%, #FDF3E4 60%, #FBEDD9 100%);
+		background: linear-gradient(180deg, var(--sk-bg-1) 0%, var(--sk-bg-2) 60%, var(--sk-bg-3) 100%);
 	}
 
 	.nav-bar {
@@ -274,13 +277,13 @@
 	}
 
 	.nav-title {
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 32rpx;
 		font-weight: 600;
 	}
 
 	.nav-action {
-		color: #F59A23;
+		color: var(--sk-accent);
 		font-size: 28rpx;
 		font-weight: 600;
 		min-width: 88rpx;
@@ -298,7 +301,7 @@
 	.form-card {
 		background: rgba(255, 255, 255, 0.98);
 		border-radius: 28rpx;
-		box-shadow: 0 12rpx 30rpx rgba(212, 162, 94, 0.12);
+		box-shadow: 0 12rpx 30rpx var(--sk-shadow);
 	}
 
 	.avatar-card {
@@ -316,7 +319,7 @@
 
 	.avatar-tip {
 		margin-top: 18rpx;
-		color: #A08C77;
+		color: var(--sk-text-muted);
 		font-size: 24rpx;
 	}
 
@@ -351,7 +354,7 @@
 	.modal-title {
 		display: block;
 		text-align: center;
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 32rpx;
 		font-weight: 600;
 	}
@@ -362,7 +365,7 @@
 
 	.modal-label {
 		display: block;
-		color: #7A6650;
+		color: var(--sk-text-3);
 		font-size: 24rpx;
 		margin-bottom: 14rpx;
 	}
@@ -371,14 +374,14 @@
 		height: 80rpx;
 		padding: 0 22rpx;
 		border-radius: 20rpx;
-		background: #fffaf2;
-		color: #3D3226;
+		background: var(--sk-field);
+		color: var(--sk-text);
 		font-size: 28rpx;
 		box-sizing: border-box;
 	}
 
 	.modal-placeholder {
-		color: #B9A88F;
+		color: var(--sk-text-faint);
 	}
 
 	.modal-actions {
@@ -397,17 +400,17 @@
 	}
 
 	.modal-btn-cancel {
-		background: #F5EBDC;
+		background: var(--sk-chip);
 	}
 
 	.modal-btn-cancel-text {
-		color: #7A6650;
+		color: var(--sk-text-3);
 		font-size: 28rpx;
 		font-weight: 600;
 	}
 
 	.modal-btn-confirm {
-		background: linear-gradient(135deg, #FFB84D 0%, #F59A23 100%);
+		background: linear-gradient(135deg, var(--sk-accent-light) 0%, var(--sk-accent) 100%);
 	}
 
 	.modal-btn-confirm-text {
@@ -427,7 +430,7 @@
 	}
 
 	.password-entry-text {
-		color: #B9A88F;
+		color: var(--sk-text-faint);
 		font-size: 28rpx;
 	}
 
@@ -437,12 +440,12 @@
 	}
 
 	.field + .field {
-		border-top: 1rpx solid rgba(242, 231, 213, 0.95);
+		border-top: 1rpx solid var(--sk-border);
 	}
 
 	.field-label {
 		display: block;
-		color: #7A6650;
+		color: var(--sk-text-3);
 		font-size: 24rpx;
 		margin-bottom: 16rpx;
 	}
@@ -451,8 +454,8 @@
 		height: 80rpx;
 		padding: 0 22rpx;
 		border-radius: 20rpx;
-		background: #fffaf2;
-		color: #3D3226;
+		background: var(--sk-field);
+		color: var(--sk-text);
 		font-size: 28rpx;
 		box-sizing: border-box;
 	}
@@ -464,12 +467,12 @@
 	}
 
 	.readonly-text {
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 28rpx;
 	}
 
 	.readonly-tip {
-		color: #B9A88F;
+		color: var(--sk-text-faint);
 		font-size: 24rpx;
 	}
 
@@ -490,7 +493,7 @@
 	}
 
 	.field-placeholder {
-		color: #B9A88F;
+		color: var(--sk-text-faint);
 	}
 
 </style>
