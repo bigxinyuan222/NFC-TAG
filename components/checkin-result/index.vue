@@ -65,7 +65,7 @@
 		padding: 42rpx 34rpx 34rpx;
 		border-radius: 28rpx;
 		background: #ffffff;
-		box-shadow: 0 24rpx 54rpx rgba(212, 162, 94, 0.22);
+		box-shadow: 0 24rpx 54rpx var(--sk-shadow-xl);
 		text-align: center;
 	}
 
@@ -100,7 +100,7 @@
 	.title {
 		display: block;
 		margin-top: 24rpx;
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 36rpx;
 		font-weight: 700;
 	}
@@ -108,7 +108,7 @@
 	.message {
 		display: block;
 		margin-top: 18rpx;
-		color: #7A6650;
+		color: var(--sk-text-3);
 		font-size: 26rpx;
 		line-height: 1.7;
 	}
@@ -116,7 +116,7 @@
 	.meta {
 		display: block;
 		margin-top: 14rpx;
-		color: #A08C77;
+		color: var(--sk-text-muted);
 		font-size: 24rpx;
 	}
 
@@ -126,7 +126,7 @@
 		line-height: 88rpx;
 		border: 0;
 		border-radius: 20rpx;
-		background: linear-gradient(135deg, #FFB84D 0%, #F59A23 100%);
+		background: linear-gradient(135deg, var(--sk-accent-light) 0%, var(--sk-accent) 100%);
 		color: #ffffff;
 		font-size: 28rpx;
 		font-weight: 600;

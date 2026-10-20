@@ -37,6 +37,13 @@
 			}
 		},
 		{
+			"path": "pages/settings/index",
+			"style": {
+				"navigationBarTitleText": "系统设置",
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "pages/about/index",
 			"style": {
 				"navigationBarTitleText": "关于我们",

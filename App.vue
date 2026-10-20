@@ -177,8 +177,176 @@
 </script>
 
 <style>
+/* 配色皮肤：全局 CSS 变量。默认（暖阳）声明在 page 上，各页面继承；
+   页面根节点再挂 skin-mint / skin-dream / skin-sea 覆盖变量。 */
 page {
-	background: #FDF6E9;
+	--sk-page-bg: #FDF6E9;
+	--sk-bg-1: #FFF9EF;
+	--sk-bg-2: #FDF3E4;
+	--sk-bg-3: #FBEDD9;
+
+	--sk-text: #3D3226;
+	--sk-text-2: #4A3D2E;
+	--sk-text-3: #7A6650;
+	--sk-text-4: #8A7660;
+	--sk-text-muted: #A08C77;
+	--sk-text-faint: #B9A88F;
+
+	--sk-accent: #F59A23;
+	--sk-accent-deep: #D9871A;
+	--sk-accent-light: #FFB84D;
+	--sk-accent-ring: #FFCF8A;
+	--sk-accent-tint: rgba(245, 154, 35, 0.12);
+	--sk-accent-tint-weak: rgba(245, 154, 35, 0.07);
+	--sk-accent-halo: rgba(245, 154, 35, 0.28);
+	--sk-accent-halo-soft: rgba(255, 184, 77, 0.22);
+
+	--sk-glow-1: rgba(255, 199, 130, 0.30);
+	--sk-glow-2: rgba(255, 199, 130, 0.12);
+	--sk-glow-3: rgba(255, 199, 130, 0.04);
+	--sk-glow-4: rgba(255, 199, 130, 0);
+	--sk-orb-1: rgba(255, 184, 77, 0.16);
+	--sk-orb-2: rgba(255, 184, 77, 0.07);
+	--sk-orb-3: rgba(255, 184, 77, 0);
+
+	--sk-border: rgba(242, 231, 213, 0.92);
+	--sk-line: #F2E7D5;
+	--sk-field: #FFFAF2;
+	--sk-chip: #F5EBDC;
+	--sk-tab-muted: #C4B2A0;
+
+	--sk-shadow-sm: rgba(212, 162, 94, 0.10);
+	--sk-shadow: rgba(212, 162, 94, 0.12);
+	--sk-shadow-lg: rgba(212, 162, 94, 0.18);
+	--sk-shadow-xl: rgba(212, 162, 94, 0.22);
+
+	background: var(--sk-page-bg);
+}
+
+.skin-mint {
+	--sk-page-bg: #F3FAF2;
+	--sk-bg-1: #F6FBF5;
+	--sk-bg-2: #EAF6EC;
+	--sk-bg-3: #DFF2E4;
+
+	--sk-text: #2E4A38;
+	--sk-text-2: #3A5A47;
+	--sk-text-3: #56735F;
+	--sk-text-4: #4E6B58;
+	--sk-text-muted: #7E9C87;
+	--sk-text-faint: #A3BCAA;
+
+	--sk-accent: #5FA97A;
+	--sk-accent-deep: #47875F;
+	--sk-accent-light: #7FC295;
+	--sk-accent-ring: #A8DCB9;
+	--sk-accent-tint: rgba(95, 169, 122, 0.12);
+	--sk-accent-tint-weak: rgba(95, 169, 122, 0.07);
+	--sk-accent-halo: rgba(95, 169, 122, 0.28);
+	--sk-accent-halo-soft: rgba(127, 194, 149, 0.22);
+
+	--sk-glow-1: rgba(168, 220, 185, 0.30);
+	--sk-glow-2: rgba(168, 220, 185, 0.12);
+	--sk-glow-3: rgba(168, 220, 185, 0.04);
+	--sk-glow-4: rgba(168, 220, 185, 0);
+	--sk-orb-1: rgba(127, 194, 149, 0.16);
+	--sk-orb-2: rgba(127, 194, 149, 0.07);
+	--sk-orb-3: rgba(127, 194, 149, 0);
+
+	--sk-border: rgba(205, 232, 213, 0.92);
+	--sk-line: #CDE8D5;
+	--sk-field: #F7FCF8;
+	--sk-chip: #E3F2E7;
+	--sk-tab-muted: #A8C2B0;
+
+	--sk-shadow-sm: rgba(88, 140, 110, 0.10);
+	--sk-shadow: rgba(88, 140, 110, 0.12);
+	--sk-shadow-lg: rgba(88, 140, 110, 0.18);
+	--sk-shadow-xl: rgba(88, 140, 110, 0.22);
+}
+
+.skin-dream {
+	--sk-page-bg: #FAF6FE;
+	--sk-bg-1: #FBF7FF;
+	--sk-bg-2: #F6EFFB;
+	--sk-bg-3: #EFE4F7;
+
+	--sk-text: #3E3350;
+	--sk-text-2: #4B3F5F;
+	--sk-text-3: #6A5B80;
+	--sk-text-4: #63547A;
+	--sk-text-muted: #9A8DB0;
+	--sk-text-faint: #BCAFCC;
+
+	--sk-accent: #B07CD4;
+	--sk-accent-deep: #9660BC;
+	--sk-accent-light: #C79BE4;
+	--sk-accent-ring: #DDBEF0;
+	--sk-accent-tint: rgba(176, 124, 212, 0.12);
+	--sk-accent-tint-weak: rgba(176, 124, 212, 0.07);
+	--sk-accent-halo: rgba(176, 124, 212, 0.28);
+	--sk-accent-halo-soft: rgba(199, 155, 228, 0.22);
+
+	--sk-glow-1: rgba(221, 190, 240, 0.30);
+	--sk-glow-2: rgba(221, 190, 240, 0.12);
+	--sk-glow-3: rgba(221, 190, 240, 0.04);
+	--sk-glow-4: rgba(221, 190, 240, 0);
+	--sk-orb-1: rgba(199, 155, 228, 0.16);
+	--sk-orb-2: rgba(199, 155, 228, 0.07);
+	--sk-orb-3: rgba(199, 155, 228, 0);
+
+	--sk-border: rgba(228, 214, 242, 0.92);
+	--sk-line: #E4D6F2;
+	--sk-field: #FBF7FF;
+	--sk-chip: #EFE3F6;
+	--sk-tab-muted: #BDB0C9;
+
+	--sk-shadow-sm: rgba(150, 110, 190, 0.10);
+	--sk-shadow: rgba(150, 110, 190, 0.12);
+	--sk-shadow-lg: rgba(150, 110, 190, 0.18);
+	--sk-shadow-xl: rgba(150, 110, 190, 0.22);
+}
+
+.skin-sea {
+	--sk-page-bg: #F3F7FE;
+	--sk-bg-1: #F4F8FF;
+	--sk-bg-2: #EDF3FC;
+	--sk-bg-3: #E2ECF9;
+
+	--sk-text: #2C3A52;
+	--sk-text-2: #37475F;
+	--sk-text-3: #5A6B84;
+	--sk-text-4: #52637C;
+	--sk-text-muted: #8395AC;
+	--sk-text-faint: #A9B9CB;
+
+	--sk-accent: #6B8FD8;
+	--sk-accent-deep: #5378C2;
+	--sk-accent-light: #8FACEA;
+	--sk-accent-ring: #B8CCF2;
+	--sk-accent-tint: rgba(107, 143, 216, 0.12);
+	--sk-accent-tint-weak: rgba(107, 143, 216, 0.07);
+	--sk-accent-halo: rgba(107, 143, 216, 0.28);
+	--sk-accent-halo-soft: rgba(143, 172, 234, 0.22);
+
+	--sk-glow-1: rgba(184, 204, 242, 0.30);
+	--sk-glow-2: rgba(184, 204, 242, 0.12);
+	--sk-glow-3: rgba(184, 204, 242, 0.04);
+	--sk-glow-4: rgba(184, 204, 242, 0);
+	--sk-orb-1: rgba(143, 172, 234, 0.16);
+	--sk-orb-2: rgba(143, 172, 234, 0.07);
+	--sk-orb-3: rgba(143, 172, 234, 0);
+
+	--sk-border: rgba(210, 224, 242, 0.92);
+	--sk-line: #D2E0F2;
+	--sk-field: #F7FBFF;
+	--sk-chip: #E6EDF9;
+	--sk-tab-muted: #B4C2D2;
+
+	--sk-shadow-sm: rgba(110, 140, 195, 0.10);
+	--sk-shadow: rgba(110, 140, 195, 0.12);
+	--sk-shadow-lg: rgba(110, 140, 195, 0.18);
+	--sk-shadow-xl: rgba(110, 140, 195, 0.22);
 }
 
 /* 头像框：用 box-shadow 叠加画环，避免 border 改变容器尺寸导致布局位移 */

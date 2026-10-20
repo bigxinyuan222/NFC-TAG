@@ -1,5 +1,5 @@
 <template>
-	<view class="wrap">
+	<view class="wrap" :class="skinClass">
 		<view class="bg-orb bg-orb-left"></view>
 		<view class="bg-orb bg-orb-right"></view>
 
@@ -66,7 +66,7 @@
 			</view>
 		</view>
 
-		<app-tabbar current="profile" />
+		<app-tabbar current="profile" :skin="skinClass" />
 	</view>
 </template>
 
@@ -74,6 +74,7 @@
 	import AppTabbar from '@/components/app-tabbar/index.vue'
 	import { clearSession, getSession } from '@/utils/session'
 	import { AVATAR_FRAMES, getAvatarFrame, getAvatarFrameId, setAvatarFrameId } from '@/utils/avatar-frame'
+	import { getSkinClass } from '@/utils/skin'
 
 	export default {
 		components: {
@@ -90,9 +91,11 @@
 				avatarFrames: AVATAR_FRAMES,
 				framePickerVisible: false,
 				showLogoutModal: false,
+				skinClass: 'skin-sunny',
 				menuItems: [
 					{ key: 'profile', label: '个人信息', icon: '/static/icons/menu-user.svg', tint: 'rgba(245, 154, 35, 0.14)' },
 					{ key: 'security', label: '账号与安全', icon: '/static/icons/menu-shield.svg', tint: 'rgba(95, 169, 122, 0.16)' },
+					{ key: 'setting', label: '系统设置', icon: '/static/icons/menu-settings.svg', tint: 'rgba(107, 143, 216, 0.16)' },
 					{ key: 'about', label: '关于我们', icon: '/static/icons/menu-about.svg', tint: 'rgba(176, 124, 212, 0.16)' }
 				]
 			}
@@ -106,6 +109,7 @@
 			}
 		},
 		onShow() {
+			this.skinClass = getSkinClass()
 			const session = getSession()
 			const { userName, department, avatarUrl } = session
 			this.userName = userName
@@ -131,6 +135,13 @@
 				if (item.key === 'profile') {
 					uni.navigateTo({
 						url: '/pages/profile-edit/index'
+					})
+					return
+				}
+
+				if (item.key === 'setting') {
+					uni.navigateTo({
+						url: '/pages/settings/index'
 					})
 					return
 				}
@@ -185,14 +196,14 @@
 
 <style>
 	page {
-		background: #FDF6E9;
+		background: var(--sk-page-bg);
 	}
 
 	.wrap {
 		position: relative;
 		height: 100vh;
 		height: 100dvh;
-		background: linear-gradient(180deg, #FFF9EF 0%, #FDF3E4 60%, #FBEDD9 100%);
+		background: linear-gradient(180deg, var(--sk-bg-1) 0%, var(--sk-bg-2) 60%, var(--sk-bg-3) 100%);
 		overflow: hidden;
 	}
 
@@ -200,7 +211,7 @@
 		position: absolute;
 		border-radius: 50%;
 		pointer-events: none;
-		background: radial-gradient(circle, rgba(255, 184, 77, 0.16) 0%, rgba(255, 184, 77, 0.07) 42%, rgba(255, 184, 77, 0) 74%);
+		background: radial-gradient(circle, var(--sk-orb-1) 0%, var(--sk-orb-2) 42%, var(--sk-orb-3) 74%);
 	}
 
 	.bg-orb-left {
@@ -228,7 +239,7 @@
 	.top-glow {
 		height: 144rpx;
 		border-radius: 0 0 150rpx 150rpx;
-		background: radial-gradient(circle at 50% 0, rgba(255, 199, 130, 0.30) 0, rgba(255, 199, 130, 0.12) 34%, rgba(255, 199, 130, 0.04) 56%, rgba(255, 199, 130, 0) 76%);
+		background: radial-gradient(circle at 50% 0, var(--sk-glow-1) 0, var(--sk-glow-2) 34%, var(--sk-glow-3) 56%, var(--sk-glow-4) 76%);
 	}
 
 	.profile-head {
@@ -244,8 +255,8 @@
 		padding: 8rpx;
 		box-sizing: border-box;
 		border-radius: 50%;
-		background: rgba(255, 255, 255, 0.84);
-		box-shadow: 0 18rpx 42rpx rgba(212, 162, 94, 0.18);
+		background: var(--sk-card-3);
+		box-shadow: 0 18rpx 42rpx var(--sk-shadow-lg);
 	}
 
 	.avatar-image {
@@ -257,7 +268,7 @@
 	.profile-name {
 		display: block;
 		margin-top: 24rpx;
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 46rpx;
 		font-weight: 600;
 		line-height: 1.25;
@@ -266,7 +277,7 @@
 	.profile-meta {
 		display: block;
 		margin-top: 14rpx;
-		color: #A08C77;
+		color: var(--sk-text-muted);
 		font-size: 24rpx;
 		line-height: 1.4;
 	}
@@ -275,7 +286,7 @@
 	.logout-card {
 		background: rgba(255, 255, 255, 0.98);
 		border-radius: 32rpx;
-		box-shadow: 0 12rpx 34rpx rgba(212, 162, 94, 0.12);
+		box-shadow: 0 12rpx 34rpx var(--sk-shadow);
 	}
 
 	.menu-card {
@@ -298,7 +309,7 @@
 	}
 
 	.menu-row + .menu-row {
-		border-top: 1rpx solid rgba(242, 231, 213, 0.92);
+		border-top: 1rpx solid var(--sk-border);
 	}
 
 	.menu-left {
@@ -321,7 +332,7 @@
 	}
 
 	.menu-label {
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 28rpx;
 		font-weight: 600;
 	}
@@ -371,7 +382,7 @@
 		padding: 36rpx 28rpx calc(44rpx + env(safe-area-inset-bottom));
 		background: #FFFFFF;
 		border-radius: 36rpx 36rpx 0 0;
-		box-shadow: 0 -12rpx 30rpx rgba(212, 162, 94, 0.10);
+		box-shadow: 0 -12rpx 30rpx var(--sk-shadow-sm);
 		transform: translateY(100%);
 		opacity: 0;
 		transition: transform 0.28s ease, opacity 0.28s ease;
@@ -385,7 +396,7 @@
 	.frame-panel-title {
 		display: block;
 		text-align: center;
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 32rpx;
 		font-weight: 700;
 	}
@@ -411,14 +422,14 @@
 	}
 
 	.frame-preview-wrap--active {
-		box-shadow: 0 0 0 2rpx #F59A23;
+		box-shadow: 0 0 0 2rpx var(--sk-accent);
 	}
 
 	.frame-preview {
 		width: 92rpx;
 		height: 92rpx;
 		border-radius: 50%;
-		background: #FFF9EF;
+		background: var(--sk-bg-1);
 		overflow: hidden;
 		box-sizing: border-box;
 	}
@@ -431,12 +442,12 @@
 
 	.frame-option-name {
 		margin-top: 14rpx;
-		color: #A08C77;
+		color: var(--sk-text-muted);
 		font-size: 24rpx;
 	}
 
 	.frame-option-name--active {
-		color: #F59A23;
+		color: var(--sk-accent);
 		font-weight: 600;
 	}
 

@@ -1,5 +1,5 @@
 <template>
-	<view class="wrap">
+	<view class="wrap" :class="skinClass">
 		<view class="status-bar"></view>
 		<view class="nav-bar">
 			<view class="nav-back" @tap="goBack">
@@ -18,13 +18,16 @@
 </template>
 
 <script>
+	import { getSkinClass } from '@/utils/skin'
 
 	export default {
 		data() {
 			return {
+				skinClass: 'skin-sunny'
 			}
 		},
 		onShow() {
+			this.skinClass = getSkinClass()
 		},
 		methods: {
 			goBack() {
@@ -42,7 +45,7 @@
 
 <style>
 	page {
-		background: #FDF6E9;
+		background: var(--sk-page-bg);
 	}
 
 	.wrap {
@@ -50,7 +53,7 @@
 		height: 100dvh;
 		padding: 0 32rpx 32rpx;
 		box-sizing: border-box;
-		background: linear-gradient(180deg, #FFF9EF 0%, #FDF3E4 60%, #FBEDD9 100%);
+		background: linear-gradient(180deg, var(--sk-bg-1) 0%, var(--sk-bg-2) 60%, var(--sk-bg-3) 100%);
 	}
 
 	.status-bar {
@@ -82,7 +85,7 @@
 		}
 
 	.nav-title {
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 32rpx;
 		font-weight: 600;
 	}
@@ -92,12 +95,12 @@
 		padding: 34rpx 30rpx;
 		background: rgba(255, 255, 255, 0.98);
 		border-radius: 28rpx;
-		box-shadow: 0 12rpx 30rpx rgba(212, 162, 94, 0.14);
+		box-shadow: 0 12rpx 30rpx var(--sk-shadow);
 	}
 
 	.brand {
 		display: block;
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 34rpx;
 		font-weight: 700;
 	}
@@ -105,7 +108,7 @@
 	.desc {
 		display: block;
 		margin-top: 18rpx;
-		color: #7A6650;
+		color: var(--sk-text-3);
 		font-size: 26rpx;
 		line-height: 1.7;
 	}
