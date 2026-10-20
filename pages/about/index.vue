@@ -12,7 +12,7 @@
 		<view class="about-card">
 			<text class="brand">喵呜打卡</text>
 			<text class="desc">喵呜打卡是一款面向企业日常出勤场景的移动端应用，专注于提供简洁、稳定、直观的打卡记录与个人信息管理体验。</text>
-			<text class="desc">当前版本覆盖员工登录、上下班打卡、历史记录查看与个人资料维护等基础功能。</text>
+			<text class="desc">当前版本覆盖员工登录、上下班打卡、历史记录查看、个人资料维护以及主题切换等基础功能。</text>
 		</view>
 	</view>
 </template>
