@@ -3,12 +3,12 @@
 		<view class="bg-orb bg-orb-left"></view>
 		<view class="bg-orb bg-orb-right"></view>
 
-		<view class="scroll">
+		<scroll-view class="scroll" scroll-y>
 			<view class="top-glow"></view>
 
 			<view class="profile-head">
-				<view class="avatar-shell" :class="avatarFrameClass" @tap="previewAvatar" @longpress="openFramePicker">
-					<image class="avatar-image" :src="avatarLoadFailed || !avatarUrl ? '/static/icons/avatar-default.svg' : avatarUrl" mode="aspectFill" @error="handleAvatarError" />
+				<view class="avatar-shell" :class="avatarFrameClass" @tap="openFramePicker">
+					<image class="avatar-image" :src="avatarLoadFailed || !avatarUrl ? catAssets.playYarn.src : avatarUrl" mode="aspectFill" @error="handleAvatarError" />
 					<image v-if="avatarFrameOverlay" class="avatar-frame-overlay" :src="avatarFrameOverlay" mode="aspectFit" />
 				</view>
 				<text class="profile-name">{{ userName }}</text>
@@ -31,8 +31,11 @@
 				<text class="logout-text">退出登录</text>
 			</view>
 
-			<image class="cheer-banner" src="/static/cat-cheer.png" mode="widthFix" />
+		</scroll-view>
 
+		<!-- 底部插画：位于滚动区之外，固定在底部导航栏正上方，不被滚动内边距和内容高度影响 -->
+		<view class="profile-illustration">
+			<image class="profile-illustration-image" :src="catAssets.comeBanner.src" mode="widthFix" />
 		</view>
 
 		<view v-if="framePickerVisible" class="frame-mask" @tap="closeFramePicker"></view>
@@ -42,7 +45,7 @@
 				<view v-for="item in avatarFrames" :key="item.id" class="frame-option" @tap="selectFrame(item.id)">
 					<view class="frame-preview-wrap" :class="{ 'frame-preview-wrap--active': avatarFrameId === item.id }">
 						<view class="frame-preview avatar" :class="item.className">
-							<image class="frame-preview-image" :src="avatarLoadFailed || !avatarUrl ? '/static/icons/avatar-default.svg' : avatarUrl" mode="aspectFill" />
+							<image class="frame-preview-image" :src="avatarLoadFailed || !avatarUrl ? catAssets.playYarn.src : avatarUrl" mode="aspectFill" />
 							<image v-if="item.overlay" class="avatar-frame-overlay" :src="item.overlay" mode="aspectFit" />
 						</view>
 					</view>
@@ -76,6 +79,7 @@
 	import { AVATAR_FRAMES, getAvatarFrame, getAvatarFrameId, setAvatarFrameId } from '@/utils/avatar-frame'
 	import { getDisplayDepartment } from '@/utils/config'
 	import { getSkinClass } from '@/utils/skin'
+	import catAssets from '@/utils/cat-assets'
 
 	export default {
 		components: {
@@ -83,6 +87,7 @@
 		},
 		data() {
 			return {
+				catAssets,
 				userName: '',
 				department: '',
 				avatarUrl: '',
@@ -173,12 +178,6 @@
 				clearSession()
 				this.goLogin()
 			},
-			previewAvatar() {
-				if (this.avatarLoadFailed || !this.avatarUrl) return
-				uni.previewImage({
-					urls: [this.avatarUrl]
-				})
-			},
 			handleAvatarError() {
 				this.avatarLoadFailed = true
 			},
@@ -205,6 +204,8 @@
 
 	.wrap {
 		position: relative;
+		display: flex;
+		flex-direction: column;
 		height: 100vh;
 		height: 100dvh;
 		background: linear-gradient(180deg, var(--sk-bg-1) 0%, var(--sk-bg-2) 60%, var(--sk-bg-3) 100%);
@@ -235,9 +236,10 @@
 	.scroll {
 		position: relative;
 		z-index: 1;
-		height: 100%;
+		flex: 1;
+		min-height: 0;
 		box-sizing: border-box;
-		padding: 36rpx 32rpx calc(170rpx + env(safe-area-inset-bottom));
+		padding: 36rpx 32rpx 24rpx;
 	}
 
 	.top-glow {
@@ -354,17 +356,25 @@
 	}
 
 	.logout-text {
-		color: #E0685F;
+		color: var(--sk-danger);
 		font-size: 30rpx;
 		font-weight: 600;
 	}
 
-	.cheer-banner {
-		position: absolute;
-		left: 0;
-		right: 0;
+	/* 底部插画：铺满整屏宽度，高度由原图比例自然决定，下沿紧贴底部导航栏上沿 */
+	.profile-illustration {
+		position: relative;
+		z-index: 1;
+		flex: none;
 		width: 100%;
-		bottom: calc(108rpx + env(safe-area-inset-bottom));
+		margin-bottom: calc(108rpx + env(safe-area-inset-bottom) + 6rpx);
+	}
+
+	.profile-illustration-image {
+		display: block;
+		width: 100%;
+		height: auto;
+		pointer-events: none;
 	}
 
 	.frame-mask {
@@ -481,7 +491,7 @@
 
 	.logout-modal-title {
 		display: block;
-		color: #3D3226;
+		color: var(--sk-text);
 		font-size: 32rpx;
 		font-weight: 600;
 	}
@@ -489,7 +499,7 @@
 	.logout-modal-message {
 		display: block;
 		margin-top: 22rpx;
-		color: #7A6650;
+		color: var(--sk-text-3);
 		font-size: 28rpx;
 		line-height: 1.6;
 	}
@@ -510,17 +520,17 @@
 	}
 
 	.logout-modal-btn-cancel {
-		background: #F5EBDC;
+		background: var(--sk-chip);
 	}
 
 	.logout-modal-btn-cancel-text {
-		color: #7A6650;
+		color: var(--sk-text-3);
 		font-size: 28rpx;
 		font-weight: 600;
 	}
 
 	.logout-modal-btn-confirm {
-		background: linear-gradient(135deg, #FFB84D 0%, #F59A23 100%);
+		background: linear-gradient(135deg, var(--sk-accent-light) 0%, var(--sk-accent) 100%);
 	}
 
 	.logout-modal-btn-confirm-text {

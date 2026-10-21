@@ -13,7 +13,7 @@
 
 		<scroll-view class="scroll" scroll-y>
 			<view class="avatar-card">
-				<image class="avatar-image" :src="avatarLoadFailed || !form.avatarUrl ? '/static/icons/avatar-default.svg' : form.avatarUrl" mode="aspectFill" @tap="chooseAvatar" @error="handleAvatarError" />
+				<image class="avatar-image" :src="avatarLoadFailed || !form.avatarUrl ? catAssets.playYarn.src : form.avatarUrl" mode="aspectFill" @tap="chooseAvatar" @error="handleAvatarError" />
 				<text class="avatar-tip">点击更换头像</text>
 			</view>
 
@@ -68,10 +68,12 @@
 	import { changePassword } from '@/api/auth'
 	import { clearSession, getSession, saveSession } from '@/utils/session'
 	import { getSkinClass } from '@/utils/skin'
+	import catAssets from '@/utils/cat-assets'
 
 	export default {
 		data() {
 			return {
+				catAssets,
 				avatarLoadFailed: false,
 				form: {
 					userName: '',

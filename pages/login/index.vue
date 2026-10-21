@@ -2,7 +2,7 @@
 	<view class="wrap">
 		<view class="main-shell">
 			<view class="hero">
-				<image class="hero-img" src="/static/login-hero.png" mode="widthFix" />
+				<image class="hero-img" src="/static/illustration/login-hero.png" mode="widthFix" />
 			</view>
 
 			<view class="card">
