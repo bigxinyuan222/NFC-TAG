@@ -220,6 +220,12 @@ page {
 	--sk-shadow-lg: rgba(212, 162, 94, 0.18);
 	--sk-shadow-xl: rgba(212, 162, 94, 0.22);
 
+	/* 语义色：成功 / 警告 / 错误，各皮肤统一继承，不随主色变化 */
+	--sk-success: #4FAE7C;
+	--sk-success-tint: rgba(79, 174, 124, 0.12);
+	--sk-danger: #E0685F;
+	--sk-danger-tint: rgba(224, 104, 95, 0.12);
+
 	background: var(--sk-page-bg);
 }
 
@@ -402,5 +408,48 @@ page {
 	box-shadow: none;
 	background: transparent;
 	padding: 0;
+}
+
+/* ===================== 猫咪与特效共享动画 =====================
+   所有动画均为轻量 CSS，无 JS 定时器；由真实状态或 CSS 类触发。
+   尊重系统「减少动态效果」偏好，下方统一降级为静态。 */
+@keyframes z-float {
+	0% { transform: translateY(0) scale(0.9); opacity: 0; }
+	20% { opacity: 1; }
+	100% { transform: translateY(-28rpx) scale(1); opacity: 0; }
+}
+
+@keyframes cat-breathe {
+	0%, 100% { transform: scale(1); }
+	50% { transform: scale(1.03); }
+}
+
+@keyframes cat-pop {
+	0% { transform: scale(0.6) translateY(16rpx); opacity: 0; }
+	60% { transform: scale(1.06) translateY(-4rpx); opacity: 1; }
+	100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes sparkle-twinkle {
+	0%, 100% { transform: scale(0.8); opacity: 0.5; }
+	50% { transform: scale(1.1); opacity: 1; }
+}
+
+@keyframes heart-rise {
+	0% { transform: translateY(0) scale(0.8); opacity: 0; }
+	25% { opacity: 0.9; }
+	100% { transform: translateY(-60rpx) scale(1.1); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.pulse-cat,
+	.pulse-core,
+	.pulse-ripple,
+	.record-empty-z,
+	.result-success-cat,
+	.result-sparkle,
+	.cheer-banner-cat {
+		animation: none !important;
+	}
 }
 </style>
