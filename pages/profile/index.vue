@@ -41,7 +41,7 @@
 		<view v-if="framePickerVisible" class="frame-mask" @tap="closeFramePicker"></view>
 		<view class="frame-panel" :class="{ 'frame-panel--show': framePickerVisible }">
 			<text class="frame-panel-title">选择头像框</text>
-			<view class="frame-options">
+			<scroll-view class="frame-options" scroll-x :show-scrollbar="false">
 				<view v-for="item in avatarFrames" :key="item.id" class="frame-option" @tap="selectFrame(item.id)">
 					<view class="frame-preview-wrap" :class="{ 'frame-preview-wrap--active': avatarFrameId === item.id }">
 						<view class="frame-preview avatar" :class="item.className">
@@ -51,7 +51,7 @@
 					</view>
 					<text class="frame-option-name" :class="{ 'frame-option-name--active': avatarFrameId === item.id }">{{ item.name }}</text>
 				</view>
-			</view>
+			</scroll-view>
 		</view>
 
 		<view v-if="showLogoutModal" class="logout-modal-mask" @tap="closeLogoutModal">
@@ -416,16 +416,16 @@
 	}
 
 	.frame-options {
-		display: flex;
-		justify-content: space-between;
 		margin-top: 36rpx;
+		white-space: nowrap;
 	}
 
 	.frame-option {
-		display: flex;
+		display: inline-flex;
 		flex-direction: column;
 		align-items: center;
-		flex: 1;
+		width: 124rpx;
+		vertical-align: top;
 	}
 
 	.frame-preview-wrap {
@@ -452,6 +452,43 @@
 		width: 100%;
 		height: 100%;
 		border-radius: 50%;
+	}
+
+	/* 心翼/夜玫/蓝蝶装饰外扩较大，选择面板内统一按 128% 显示，
+	   头像按各自内孔直径等比缩小并居中，避免超出滚动区被裁切或与相邻选项重叠 */
+	.frame-preview.avatar-frame--heartwing .avatar-frame-overlay,
+	.frame-preview.avatar-frame--nightrose .avatar-frame-overlay,
+	.frame-preview.avatar-frame--bluebow .avatar-frame-overlay {
+		left: -14%;
+		top: -14%;
+		width: 128%;
+		height: 128%;
+	}
+
+	.frame-preview.avatar-frame--heartwing .frame-preview-image,
+	.frame-preview.avatar-frame--nightrose .frame-preview-image,
+	.frame-preview.avatar-frame--bluebow .frame-preview-image {
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		margin: auto;
+	}
+
+	.frame-preview.avatar-frame--heartwing .frame-preview-image {
+		width: 67.3rpx;
+		height: 67.3rpx;
+	}
+
+	.frame-preview.avatar-frame--nightrose .frame-preview-image {
+		width: 57.4rpx;
+		height: 57.4rpx;
+	}
+
+	.frame-preview.avatar-frame--bluebow .frame-preview-image {
+		width: 73.6rpx;
+		height: 73.6rpx;
 	}
 
 	.frame-option-name {

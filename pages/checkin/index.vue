@@ -23,8 +23,6 @@
 				<text class="time-text">{{ timeText }}</text>
 
 				<view class="pulse-wrap">
-					<view class="pulse-ripple pulse-ripple-1"></view>
-					<view class="pulse-ripple pulse-ripple-2"></view>
 					<view class="pulse-ring pulse-ring-outer"></view>
 					<view class="pulse-ring pulse-ring-inner"></view>
 					<image class="pulse-cat" src="/static/sprites/cat-hug.png" mode="aspectFit" />
@@ -450,6 +448,19 @@
 		overflow: hidden;
 	}
 
+	/* 三个大装饰框左右外扩超出 88rpx 头像所在空间，右侧留出余量防止被页面裁切、左侧避免压到文字 */
+	.hero-row .avatar.avatar-frame--heartwing {
+		margin-right: 10rpx;
+	}
+
+	.hero-row .avatar.avatar-frame--nightrose {
+		margin-right: 24rpx;
+	}
+
+	.hero-row .avatar.avatar-frame--bluebow {
+		margin-right: 4rpx;
+	}
+
 	.avatar-image,
 	.avatar-fallback {
 		width: 100%;
@@ -542,48 +553,6 @@
 		background: var(--sk-accent-tint);
 	}
 
-	/* 波纹：与实心圆环同色的填充波，从核心圆边缘向外扩，视觉上即两个圆环在往外延展 */
-	.pulse-ripple {
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		width: 500rpx;
-		height: 500rpx;
-		margin: -250rpx 0 0 -250rpx;
-		border-radius: 50%;
-		z-index: 1;
-		opacity: 0;
-		transform: scale(0.62);
-		animation: pulse-ripple 3s linear infinite;
-		pointer-events: none;
-	}
-
-	.pulse-ripple-1 {
-		background: var(--sk-accent-tint);
-	}
-
-	.pulse-ripple-2 {
-		background: var(--sk-accent-tint-weak);
-		animation-delay: 1.5s;
-	}
-
-	@keyframes pulse-ripple {
-		0% {
-			transform: scale(0.62);
-			opacity: 0.6;
-		}
-
-		75% {
-			transform: scale(1.14);
-			opacity: 0.22;
-		}
-
-		100% {
-			transform: scale(1.2);
-			opacity: 0;
-		}
-	}
-
 	@keyframes bob-breathe {
 		0%, 100% {
 			transform: translateY(0) scale(1);
@@ -610,10 +579,11 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		justify-content: center;
+		justify-content: flex-start;
 		box-sizing: border-box;
 		width: 308rpx;
 		height: 308rpx;
+		padding-top: 48rpx;
 		border-radius: 50%;
 		background: linear-gradient(180deg, var(--sk-accent-light) 0%, var(--sk-accent) 100%);
 		box-shadow: 0 18rpx 44rpx var(--sk-accent-halo);

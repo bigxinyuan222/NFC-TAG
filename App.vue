@@ -410,6 +410,75 @@ page {
 	padding: 0;
 }
 
+/* 云端框：PNG 覆盖层自带圆环与天空装饰，去掉白色底环，并允许装饰溢出容器 */
+.avatar-shell.avatar-frame--sky,
+.avatar.avatar-frame--sky {
+	position: relative;
+	overflow: visible;
+	box-shadow: none;
+	background: transparent;
+	padding: 0;
+}
+
+/* 容器放开裁切后，头像内容自身要保持圆形 */
+.avatar-frame--sky .avatar-image,
+.avatar-frame--sky .avatar-fallback,
+.avatar-frame--sky .avatar-fallback-cat,
+.avatar-frame--sky .frame-preview-image {
+	border-radius: 50%;
+}
+
+/* 心翼/夜玫/蓝蝶框：PNG 覆盖层自带装饰环，同云端框一样去掉白底环并放开裁切 */
+.avatar-shell.avatar-frame--heartwing,
+.avatar.avatar-frame--heartwing,
+.avatar-shell.avatar-frame--nightrose,
+.avatar.avatar-frame--nightrose,
+.avatar-shell.avatar-frame--bluebow,
+.avatar.avatar-frame--bluebow {
+	position: relative;
+	overflow: visible;
+	box-shadow: none;
+	background: transparent;
+	padding: 0;
+}
+
+.avatar-frame--heartwing .avatar-image,
+.avatar-frame--heartwing .avatar-fallback,
+.avatar-frame--heartwing .avatar-fallback-cat,
+.avatar-frame--heartwing .frame-preview-image,
+.avatar-frame--nightrose .avatar-image,
+.avatar-frame--nightrose .avatar-fallback,
+.avatar-frame--nightrose .avatar-fallback-cat,
+.avatar-frame--nightrose .frame-preview-image,
+.avatar-frame--bluebow .avatar-image,
+.avatar-frame--bluebow .avatar-fallback,
+.avatar-frame--bluebow .avatar-fallback-cat,
+.avatar-frame--bluebow .frame-preview-image {
+	border-radius: 50%;
+}
+
+/* 三个框的装饰外扩比例不同，覆盖层尺寸按各自素材设定（内圆对准头像圆） */
+.avatar-frame--heartwing .avatar-frame-overlay {
+	left: -37.5%;
+	top: -37.5%;
+	width: 175%;
+	height: 175%;
+}
+
+.avatar-frame--nightrose .avatar-frame-overlay {
+	left: -52.5%;
+	top: -52.5%;
+	width: 205%;
+	height: 205%;
+}
+
+.avatar-frame--bluebow .avatar-frame-overlay {
+	left: -30%;
+	top: -30%;
+	width: 160%;
+	height: 160%;
+}
+
 /* ===================== 猫咪与特效共享动画 =====================
    所有动画均为轻量 CSS，无 JS 定时器；由真实状态或 CSS 类触发。
    尊重系统「减少动态效果」偏好，下方统一降级为静态。 */
