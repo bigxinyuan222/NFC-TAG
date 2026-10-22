@@ -220,6 +220,12 @@ page {
 	--sk-shadow-lg: rgba(212, 162, 94, 0.18);
 	--sk-shadow-xl: rgba(212, 162, 94, 0.22);
 
+	/* 卡片/浮层背景：之前漏掉的 CSS 变量，补上防止未定义 fallback 异常 */
+	--sk-card: #FFF9EF;
+	--sk-card-2: #FDF3E4;
+	--sk-card-3: #FFF9EF;
+	--sk-card-4: #FFF9EF;
+
 	/* 语义色：成功 / 警告 / 错误，各皮肤统一继承，不随主色变化 */
 	--sk-success: #4FAE7C;
 	--sk-success-tint: rgba(79, 174, 124, 0.12);
@@ -269,6 +275,11 @@ page {
 	--sk-shadow: rgba(88, 140, 110, 0.12);
 	--sk-shadow-lg: rgba(88, 140, 110, 0.18);
 	--sk-shadow-xl: rgba(88, 140, 110, 0.22);
+
+	--sk-card: #F6FBF5;
+	--sk-card-2: #EAF6EC;
+	--sk-card-3: #F6FBF5;
+	--sk-card-4: #F6FBF5;
 }
 
 .skin-dream {
@@ -311,6 +322,11 @@ page {
 	--sk-shadow: rgba(150, 110, 190, 0.12);
 	--sk-shadow-lg: rgba(150, 110, 190, 0.18);
 	--sk-shadow-xl: rgba(150, 110, 190, 0.22);
+
+	--sk-card: #FBF7FF;
+	--sk-card-2: #F6EFFB;
+	--sk-card-3: #FBF7FF;
+	--sk-card-4: #FBF7FF;
 }
 
 .skin-sea {
@@ -353,26 +369,41 @@ page {
 	--sk-shadow: rgba(110, 140, 195, 0.12);
 	--sk-shadow-lg: rgba(110, 140, 195, 0.18);
 	--sk-shadow-xl: rgba(110, 140, 195, 0.22);
+
+	--sk-card: #F4F8FF;
+	--sk-card-2: #EDF3FC;
+	--sk-card-3: #F4F8FF;
+	--sk-card-4: #F4F8FF;
 }
 
-/* 头像框：用 box-shadow 叠加画环，避免 border 改变容器尺寸导致布局位移 */
+/* 头像框：用 box-shadow 叠加画环，避免 border 改变容器尺寸导致布局位移。
+   纯色框同样清掉 padding/background，让 box-shadow 环直接紧贴头像图片，
+   避免头像和装饰环之间出现露底的间隙（profile 的 .avatar-shell 默认有 8rpx padding）。 */
 .avatar-shell.avatar-frame--sunset,
 .avatar.avatar-frame--sunset {
+	padding: 0;
+	background: transparent;
 	box-shadow: 0 0 0 6rpx #FFB84D, 0 0 22rpx rgba(245, 154, 35, 0.5);
 }
 
 .avatar-shell.avatar-frame--mint,
 .avatar.avatar-frame--mint {
+	padding: 0;
+	background: transparent;
 	box-shadow: 0 0 0 6rpx #5FA97A, 0 0 18rpx rgba(95, 169, 122, 0.45);
 }
 
 .avatar-shell.avatar-frame--violet,
 .avatar.avatar-frame--violet {
+	padding: 0;
+	background: transparent;
 	box-shadow: 0 0 0 5rpx #B07CD4, 0 0 0 11rpx rgba(176, 124, 212, 0.28), 0 0 20rpx rgba(176, 124, 212, 0.4);
 }
 
 .avatar-shell.avatar-frame--gold,
 .avatar.avatar-frame--gold {
+	padding: 0;
+	background: transparent;
 	box-shadow: 0 0 0 4rpx #E6A23C, 0 0 0 10rpx rgba(230, 162, 60, 0.4), 0 0 18rpx rgba(230, 162, 60, 0.45);
 }
 

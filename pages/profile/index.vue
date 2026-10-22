@@ -444,8 +444,9 @@
 		height: 92rpx;
 		border-radius: 50%;
 		background: var(--sk-bg-1);
-		overflow: hidden;
 		box-sizing: border-box;
+		position: relative;
+		overflow: visible;
 	}
 
 	.frame-preview-image {
@@ -454,8 +455,9 @@
 		border-radius: 50%;
 	}
 
-	/* 心翼/夜玫/蓝蝶装饰外扩较大，选择面板内统一按 128% 显示，
-	   头像按各自内孔直径等比缩小并居中，避免超出滚动区被裁切或与相邻选项重叠 */
+	/* 云端/心翼/夜玫/蓝蝶 PNG 装饰外扩较大，选择面板内统一按 128% 显示，
+	   头像图片一律填满 92rpx 容器，由 PNG 自身的透明环自然遮罩 */
+	.frame-preview.avatar-frame--sky .avatar-frame-overlay,
 	.frame-preview.avatar-frame--heartwing .avatar-frame-overlay,
 	.frame-preview.avatar-frame--nightrose .avatar-frame-overlay,
 	.frame-preview.avatar-frame--bluebow .avatar-frame-overlay {
@@ -463,32 +465,6 @@
 		top: -14%;
 		width: 128%;
 		height: 128%;
-	}
-
-	.frame-preview.avatar-frame--heartwing .frame-preview-image,
-	.frame-preview.avatar-frame--nightrose .frame-preview-image,
-	.frame-preview.avatar-frame--bluebow .frame-preview-image {
-		position: absolute;
-		left: 0;
-		right: 0;
-		top: 0;
-		bottom: 0;
-		margin: auto;
-	}
-
-	.frame-preview.avatar-frame--heartwing .frame-preview-image {
-		width: 67.3rpx;
-		height: 67.3rpx;
-	}
-
-	.frame-preview.avatar-frame--nightrose .frame-preview-image {
-		width: 57.4rpx;
-		height: 57.4rpx;
-	}
-
-	.frame-preview.avatar-frame--bluebow .frame-preview-image {
-		width: 73.6rpx;
-		height: 73.6rpx;
 	}
 
 	.frame-option-name {

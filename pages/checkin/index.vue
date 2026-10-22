@@ -529,7 +529,6 @@
 		border-radius: 50%;
 	}
 
-	/* cat-hug.png 是半身探身构图：头+前爪在一张里，top 值由用户微调 */
 	.pulse-cat {
 		position: absolute;
 		z-index: 3;
@@ -545,12 +544,18 @@
 		width: 500rpx;
 		height: 500rpx;
 		background: var(--sk-accent-tint-weak);
+		left: 50%;
+		top: 50%;
+		margin: -250rpx 0 0 -250rpx;
 	}
 
 	.pulse-ring-inner {
 		width: 400rpx;
 		height: 400rpx;
 		background: var(--sk-accent-tint);
+		left: 50%;
+		top: 50%;
+		margin: -200rpx 0 0 -200rpx;
 	}
 
 	@keyframes bob-breathe {
@@ -579,11 +584,10 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		justify-content: flex-start;
+		justify-content: center;
 		box-sizing: border-box;
 		width: 308rpx;
 		height: 308rpx;
-		padding-top: 48rpx;
 		border-radius: 50%;
 		background: linear-gradient(180deg, var(--sk-accent-light) 0%, var(--sk-accent) 100%);
 		box-shadow: 0 18rpx 44rpx var(--sk-accent-halo);
