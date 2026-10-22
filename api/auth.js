@@ -4,7 +4,8 @@ import { getToken } from '@/utils/session'
 const AUTH_PATHS = {
 	register: '/api/register',
 	login: '/api/login',
-	changePassword: '/api/change-password'
+	changePassword: '/api/change-password',
+	dingLogin: '/api/dingtalk/login'
 }
 
 function request(path, data, useAuth = false) {
@@ -69,4 +70,9 @@ export function loginAccount(data) {
 
 export function changePassword({ oldPassword, newPassword }) {
 	return request(AUTH_PATHS.changePassword, { oldPassword, newPassword }, true)
+}
+
+// 钉钉授权登录：把 authCode 交给后端，后端换用户并返回与账号密码登录一致的 token+user
+export function loginByDingTalk(authCode) {
+	return request(AUTH_PATHS.dingLogin, { authCode })
 }

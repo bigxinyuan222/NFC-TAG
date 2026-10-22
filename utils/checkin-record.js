@@ -76,8 +76,14 @@ export function getCurrentCheckinSlot(date = new Date(), slots = CHECKIN_SLOTS) 
 
 export const CHECKIN_ADVANCE_MINUTES = 30
 
+// 打卡时间窗开关：测试期间临时放开限制，后续恢复改回 true 即可
+export const CHECKIN_TIME_LIMIT_ENABLED = true
+
 // 打卡时间窗：仅目标时间点前30分钟内可打，到点即止，其余时间一律拒绝
 export function getCheckinWindowStatus(date = new Date(), slots = CHECKIN_SLOTS) {
+	if (!CHECKIN_TIME_LIMIT_ENABLED) {
+		return { allowed: true, slot: null }
+	}
 	const time = new Date(date).getTime()
 	const list = Array.isArray(slots) && slots.length ? slots : CHECKIN_SLOTS
 	const active = list.find((slot) => {
@@ -85,21 +91,6 @@ export function getCheckinWindowStatus(date = new Date(), slots = CHECKIN_SLOTS)
 		return time >= scheduled - CHECKIN_ADVANCE_MINUTES * 60 * 1000 && time <= scheduled
 	}) || null
 	return { allowed: !!active, slot: active }
-}
-
-// 重复打卡判断：当前打卡窗口（班次点前30分钟）内是否已有本地成功记录
-// 注意：仅基于本机存储，换设备/清缓存后失效，彻底去重需后端判断
-export function hasCheckedInCurrentWindow(session, date = new Date(), slots = CHECKIN_SLOTS) {
-	const status = getCheckinWindowStatus(date, slots)
-	if (!status.allowed || !status.slot) return false
-	const scheduled = getSlotTime(date, status.slot)
-	const start = scheduled - CHECKIN_ADVANCE_MINUTES * 60 * 1000
-	return getUserCheckinRecords(session).some((record) => {
-		return record.status === 'success'
-			&& Number.isFinite(record.time)
-			&& record.time >= start
-			&& record.time <= scheduled
-	})
 }
 
 function getSlotForRecordTime(date, slots = CHECKIN_SLOTS) {

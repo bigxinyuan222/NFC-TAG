@@ -2,7 +2,7 @@
 	import { clearSession, hasSession, requireNfcRescan, setPendingNfcTag } from './utils/session'
 	import { acquireNfcSubmissionLock, readTagFromCurrentIntent, releaseNfcSubmissionLock, startNfcScan, stopNfcScan } from './utils/nfc-checkin'
 	import { submitCheckin } from './api/checkin'
-	import { getCheckinWindowStatus, hasCheckedInCurrentWindow } from './utils/checkin-record'
+	import { getCheckinWindowStatus } from './utils/checkin-record'
 	import { NFC_CHECKIN_POINT_ID } from './utils/nfc-config'
 	import { getSession } from './utils/session'
 
@@ -50,11 +50,7 @@
 				}
 				const windowStatus = getCheckinWindowStatus()
 				if (!windowStatus.allowed) {
-					this.showCheckinDenied('不在打卡时间范围内')
-					return
-				}
-				if (hasCheckedInCurrentWindow(getSession())) {
-					this.showCheckinDenied('该时间已打过卡')
+					this.showCheckinDenied()
 					return
 				}
 				if (!acquireNfcSubmissionLock()) {
@@ -67,16 +63,15 @@
 				})
 			},
 
-			showCheckinDenied(message) {
-				const deniedMessage = message || '不在打卡时间范围内'
+			showCheckinDenied() {
 				const pages = getCurrentPages()
 				const current = pages[pages.length - 1]
 				if (current && current.route === 'pages/checkin/index') {
 					// 已在打卡页：直接通知当前页弹窗，避免跳页
-					uni.$emit('checkin-window-denied', { message: deniedMessage })
+					uni.$emit('checkin-window-denied')
 					return
 				}
-				uni.setStorageSync('pendingCheckinDenied', { message: deniedMessage })
+				uni.setStorageSync('pendingCheckinDenied', true)
 				uni.reLaunch({
 					url: '/pages/checkin/index'
 				})
@@ -98,10 +93,6 @@
 					const windowStatus = getCheckinWindowStatus()
 					if (!windowStatus.allowed) {
 						this.showLocalNotification('打卡失败', '不在打卡时间范围内')
-						return
-					}
-					if (hasCheckedInCurrentWindow(getSession())) {
-						this.showLocalNotification('打卡失败', '该时间已打过卡')
 						return
 					}
 					const result = await submitCheckin({
@@ -229,6 +220,18 @@ page {
 	--sk-shadow-lg: rgba(212, 162, 94, 0.18);
 	--sk-shadow-xl: rgba(212, 162, 94, 0.22);
 
+	/* 卡片/浮层背景：之前漏掉的 CSS 变量，补上防止未定义 fallback 异常 */
+	--sk-card: #FFF9EF;
+	--sk-card-2: #FDF3E4;
+	--sk-card-3: #FFF9EF;
+	--sk-card-4: #FFF9EF;
+
+	/* 语义色：成功 / 警告 / 错误，各皮肤统一继承，不随主色变化 */
+	--sk-success: #4FAE7C;
+	--sk-success-tint: rgba(79, 174, 124, 0.12);
+	--sk-danger: #E0685F;
+	--sk-danger-tint: rgba(224, 104, 95, 0.12);
+
 	background: var(--sk-page-bg);
 }
 
@@ -272,6 +275,11 @@ page {
 	--sk-shadow: rgba(88, 140, 110, 0.12);
 	--sk-shadow-lg: rgba(88, 140, 110, 0.18);
 	--sk-shadow-xl: rgba(88, 140, 110, 0.22);
+
+	--sk-card: #F6FBF5;
+	--sk-card-2: #EAF6EC;
+	--sk-card-3: #F6FBF5;
+	--sk-card-4: #F6FBF5;
 }
 
 .skin-dream {
@@ -314,6 +322,11 @@ page {
 	--sk-shadow: rgba(150, 110, 190, 0.12);
 	--sk-shadow-lg: rgba(150, 110, 190, 0.18);
 	--sk-shadow-xl: rgba(150, 110, 190, 0.22);
+
+	--sk-card: #FBF7FF;
+	--sk-card-2: #F6EFFB;
+	--sk-card-3: #FBF7FF;
+	--sk-card-4: #FBF7FF;
 }
 
 .skin-sea {
@@ -356,26 +369,41 @@ page {
 	--sk-shadow: rgba(110, 140, 195, 0.12);
 	--sk-shadow-lg: rgba(110, 140, 195, 0.18);
 	--sk-shadow-xl: rgba(110, 140, 195, 0.22);
+
+	--sk-card: #F4F8FF;
+	--sk-card-2: #EDF3FC;
+	--sk-card-3: #F4F8FF;
+	--sk-card-4: #F4F8FF;
 }
 
-/* 头像框：用 box-shadow 叠加画环，避免 border 改变容器尺寸导致布局位移 */
+/* 头像框：用 box-shadow 叠加画环，避免 border 改变容器尺寸导致布局位移。
+   纯色框同样清掉 padding/background，让 box-shadow 环直接紧贴头像图片，
+   避免头像和装饰环之间出现露底的间隙（profile 的 .avatar-shell 默认有 8rpx padding）。 */
 .avatar-shell.avatar-frame--sunset,
 .avatar.avatar-frame--sunset {
+	padding: 0;
+	background: transparent;
 	box-shadow: 0 0 0 6rpx #FFB84D, 0 0 22rpx rgba(245, 154, 35, 0.5);
 }
 
 .avatar-shell.avatar-frame--mint,
 .avatar.avatar-frame--mint {
+	padding: 0;
+	background: transparent;
 	box-shadow: 0 0 0 6rpx #5FA97A, 0 0 18rpx rgba(95, 169, 122, 0.45);
 }
 
 .avatar-shell.avatar-frame--violet,
 .avatar.avatar-frame--violet {
+	padding: 0;
+	background: transparent;
 	box-shadow: 0 0 0 5rpx #B07CD4, 0 0 0 11rpx rgba(176, 124, 212, 0.28), 0 0 20rpx rgba(176, 124, 212, 0.4);
 }
 
 .avatar-shell.avatar-frame--gold,
 .avatar.avatar-frame--gold {
+	padding: 0;
+	background: transparent;
 	box-shadow: 0 0 0 4rpx #E6A23C, 0 0 0 10rpx rgba(230, 162, 60, 0.4), 0 0 18rpx rgba(230, 162, 60, 0.45);
 }
 
@@ -411,5 +439,117 @@ page {
 	box-shadow: none;
 	background: transparent;
 	padding: 0;
+}
+
+/* 云端框：PNG 覆盖层自带圆环与天空装饰，去掉白色底环，并允许装饰溢出容器 */
+.avatar-shell.avatar-frame--sky,
+.avatar.avatar-frame--sky {
+	position: relative;
+	overflow: visible;
+	box-shadow: none;
+	background: transparent;
+	padding: 0;
+}
+
+/* 容器放开裁切后，头像内容自身要保持圆形 */
+.avatar-frame--sky .avatar-image,
+.avatar-frame--sky .avatar-fallback,
+.avatar-frame--sky .avatar-fallback-cat,
+.avatar-frame--sky .frame-preview-image {
+	border-radius: 50%;
+}
+
+/* 心翼/夜玫/蓝蝶框：PNG 覆盖层自带装饰环，同云端框一样去掉白底环并放开裁切 */
+.avatar-shell.avatar-frame--heartwing,
+.avatar.avatar-frame--heartwing,
+.avatar-shell.avatar-frame--nightrose,
+.avatar.avatar-frame--nightrose,
+.avatar-shell.avatar-frame--bluebow,
+.avatar.avatar-frame--bluebow {
+	position: relative;
+	overflow: visible;
+	box-shadow: none;
+	background: transparent;
+	padding: 0;
+}
+
+.avatar-frame--heartwing .avatar-image,
+.avatar-frame--heartwing .avatar-fallback,
+.avatar-frame--heartwing .avatar-fallback-cat,
+.avatar-frame--heartwing .frame-preview-image,
+.avatar-frame--nightrose .avatar-image,
+.avatar-frame--nightrose .avatar-fallback,
+.avatar-frame--nightrose .avatar-fallback-cat,
+.avatar-frame--nightrose .frame-preview-image,
+.avatar-frame--bluebow .avatar-image,
+.avatar-frame--bluebow .avatar-fallback,
+.avatar-frame--bluebow .avatar-fallback-cat,
+.avatar-frame--bluebow .frame-preview-image {
+	border-radius: 50%;
+}
+
+/* 三个框的装饰外扩比例不同，覆盖层尺寸按各自素材设定（内圆对准头像圆） */
+.avatar-frame--heartwing .avatar-frame-overlay {
+	left: -37.5%;
+	top: -37.5%;
+	width: 175%;
+	height: 175%;
+}
+
+.avatar-frame--nightrose .avatar-frame-overlay {
+	left: -52.5%;
+	top: -52.5%;
+	width: 205%;
+	height: 205%;
+}
+
+.avatar-frame--bluebow .avatar-frame-overlay {
+	left: -30%;
+	top: -30%;
+	width: 160%;
+	height: 160%;
+}
+
+/* ===================== 猫咪与特效共享动画 =====================
+   所有动画均为轻量 CSS，无 JS 定时器；由真实状态或 CSS 类触发。
+   尊重系统「减少动态效果」偏好，下方统一降级为静态。 */
+@keyframes z-float {
+	0% { transform: translateY(0) scale(0.9); opacity: 0; }
+	20% { opacity: 1; }
+	100% { transform: translateY(-28rpx) scale(1); opacity: 0; }
+}
+
+@keyframes cat-breathe {
+	0%, 100% { transform: scale(1); }
+	50% { transform: scale(1.03); }
+}
+
+@keyframes cat-pop {
+	0% { transform: scale(0.6) translateY(16rpx); opacity: 0; }
+	60% { transform: scale(1.06) translateY(-4rpx); opacity: 1; }
+	100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes sparkle-twinkle {
+	0%, 100% { transform: scale(0.8); opacity: 0.5; }
+	50% { transform: scale(1.1); opacity: 1; }
+}
+
+@keyframes heart-rise {
+	0% { transform: translateY(0) scale(0.8); opacity: 0; }
+	25% { opacity: 0.9; }
+	100% { transform: translateY(-60rpx) scale(1.1); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.pulse-cat,
+	.pulse-core,
+	.pulse-ripple,
+	.record-empty-z,
+	.result-success-cat,
+	.result-sparkle,
+	.cheer-banner-cat {
+		animation: none !important;
+	}
 }
 </style>

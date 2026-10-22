@@ -1,6 +1,11 @@
 <template>
 	<view v-if="visible" class="mask" @click.self="handleClose">
 		<view class="panel">
+			<view v-if="success" class="result-cat-wrap">
+				<image class="result-sparkle result-sparkle-1" :src="catAssets.sparkle.src" mode="aspectFit" />
+				<image class="result-sparkle result-sparkle-2" :src="catAssets.sparkle.src" mode="aspectFit" />
+				<image class="result-success-cat" :src="catAssets.cheer.src" mode="aspectFit" />
+			</view>
 			<view class="badge" :class="success ? 'badge-success' : 'badge-fail'">
 				<text class="badge-text">{{ success ? '成功' : '失败' }}</text>
 			</view>
@@ -14,7 +19,12 @@
 </template>
 
 <script>
+	import catAssets from '@/utils/cat-assets'
+
 	export default {
+		data() {
+			return { catAssets }
+		},
 		props: {
 			visible: {
 				type: Boolean,
@@ -80,21 +90,55 @@
 	}
 
 	.badge-success {
-		background: rgba(79, 174, 124, 0.12);
+		background: var(--sk-success-tint);
 	}
 
 	.badge-fail {
-		background: rgba(224, 104, 95, 0.12);
+		background: var(--sk-danger-tint);
 	}
 
 	.badge-text {
 		font-size: 24rpx;
 		font-weight: 600;
-		color: #4FAE7C;
+		color: var(--sk-success);
 	}
 
 	.badge-fail .badge-text {
-		color: #E0685F;
+		color: var(--sk-danger);
+	}
+
+	.result-cat-wrap {
+		position: relative;
+		display: flex;
+		align-items: flex-end;
+		justify-content: center;
+		height: 200rpx;
+		margin-bottom: 8rpx;
+	}
+
+	.result-success-cat {
+		width: 220rpx;
+		height: 220rpx;
+		animation: cat-pop 0.5s ease-out both;
+	}
+
+	.result-sparkle {
+		position: absolute;
+		width: 44rpx;
+		height: 44rpx;
+		pointer-events: none;
+		animation: sparkle-twinkle 1.6s ease-in-out infinite;
+	}
+
+	.result-sparkle-1 {
+		top: 30rpx;
+		left: 60rpx;
+	}
+
+	.result-sparkle-2 {
+		top: 56rpx;
+		right: 60rpx;
+		animation-delay: 0.7s;
 	}
 
 	.title {

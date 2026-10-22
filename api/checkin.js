@@ -1,5 +1,6 @@
 import { BASE_URL } from '@/utils/config'
 import { getToken } from '@/utils/session'
+import { getDeviceId } from '@/utils/device'
 
 export function getMyCheckins({ page = 1, pageSize = 20 } = {}) {
 	const token = getToken()
@@ -75,7 +76,8 @@ export function submitCheckin({ pointId, uid }) {
 			},
 			data: {
 				pointId,
-				uid
+				uid,
+				deviceId: getDeviceId()
 			},
 			success: (response) => {
 				const body = response.data && typeof response.data === 'object' ? response.data : {}

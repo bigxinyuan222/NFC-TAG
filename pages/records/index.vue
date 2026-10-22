@@ -1,6 +1,6 @@
 <template>
 	<view class="wrap" :class="skinClass">
-		<scroll-view class="scroll" scroll-y :refresher-enabled="true" :refresher-triggered="isRefreshing" @refresherrefresh="handleRefresh">
+		<scroll-view class="scroll" scroll-y :refresher-enabled="true" refresher-background="transparent" :refresher-triggered="isRefreshing" @refresherrefresh="handleRefresh">
 			<view class="header-row">
 				<text class="page-title">打卡记录</text>
 				<image class="header-icon" src="/static/icons/clipboard.svg" mode="aspectFit" />
@@ -41,7 +41,10 @@
 					<text class="schedule-date">{{ selectedDateText }}</text>
 				</view>
 				<view v-if="dayRecords.length === 0" class="record-empty">
-					<image v-if="!isLoading" class="record-empty-cat" src="/static/cat-empty.png" mode="aspectFit" />
+					<view v-if="!isLoading" class="record-empty-visual">
+						<image class="record-empty-cat" :src="catAssets.sleeping.src" mode="aspectFit" />
+						<image class="record-empty-z" :src="catAssets.sleepZ.src" mode="aspectFit" />
+					</view>
 					<text class="record-empty-text">{{ isLoading ? '记录加载中…' : '这一天还没有打卡记录哦，喵' }}</text>
 				</view>
 				<view v-for="record in dayRecords" :key="record.id" class="schedule-row">
@@ -66,6 +69,7 @@
 	import { getMyCheckins } from '@/api/checkin'
 	import { clearSession, getSession } from '@/utils/session'
 	import { getSkinClass, getSkinDecorSrc } from '@/utils/skin'
+	import catAssets from '@/utils/cat-assets'
 
 	function formatDateKey(date) {
 		const year = date.getFullYear()
@@ -94,6 +98,7 @@
 		},
 		data() {
 			return {
+				catAssets,
 				userName: '',
 				department: '',
 				selectedDateKey: '',
@@ -111,7 +116,7 @@
 				requestVersion: 0,
 				errorMessage: '',
 				skinClass: 'skin-sunny',
-				decorSrc: '/static/decor-bottom.svg'
+				decorSrc: '/static/decor/decor-bottom.svg'
 			}
 		},
 		computed: {
@@ -165,7 +170,6 @@
 				this.remoteComplete = false
 				this.recordSource = 'remote'
 				this.errorMessage = ''
-				this.recordList = []
 				this.isLoading = true
 				this.isRefreshing = isRefresh
 				this.refreshSelectedDate()
@@ -266,7 +270,7 @@
 		z-index: 1;
 		height: 100%;
 		box-sizing: border-box;
-		padding: 156rpx 30rpx 132rpx;
+		padding: calc(var(--status-bar-height) + 68rpx) 30rpx calc(132rpx + env(safe-area-inset-bottom));
 	}
 
 	.header-row,
@@ -467,9 +471,26 @@
 		gap: 14rpx;
 	}
 
+	.record-empty-visual {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
 	.record-empty-cat {
 		width: 240rpx;
-		height: 158rpx;
+		height: 200rpx;
+	}
+
+	.record-empty-z {
+		position: absolute;
+		top: -6rpx;
+		right: 150rpx;
+		width: 40rpx;
+		height: 40rpx;
+		pointer-events: none;
+		animation: z-float 2.8s ease-out infinite;
 	}
 
 	.record-empty-text {

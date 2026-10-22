@@ -6,14 +6,13 @@
 					<text class="title">你好，<text class="name">{{ userName }}</text></text>
 					<view class="dept-row">
 						<image class="dept-icon" src="/static/icons/building.svg" mode="aspectFit" />
-						<text class="subtitle">{{ department }}</text>
+						<text class="subtitle">{{ displayDepartment }}</text>
 					</view>
 				</view>
-				<view class="avatar" :class="avatarFrameClass" @tap="previewAvatar" @longpress="logout">
+				<view class="avatar" :class="avatarFrameClass" @tap="previewAvatar">
 					<image v-if="avatarUrl && !avatarLoadFailed" class="avatar-image" :src="avatarUrl" mode="aspectFill" @error="handleAvatarError" />
 					<view v-else class="avatar-fallback">
-						<view class="avatar-head"></view>
-						<view class="avatar-body"></view>
+						<image class="avatar-fallback-cat" :src="catAssets.playYarn.src" mode="aspectFill" />
 					</view>
 					<image v-if="avatarFrameOverlay" class="avatar-frame-overlay" :src="avatarFrameOverlay" mode="aspectFit" />
 				</view>
@@ -26,18 +25,16 @@
 				<view class="pulse-wrap">
 					<view class="pulse-ring pulse-ring-outer"></view>
 					<view class="pulse-ring pulse-ring-inner"></view>
-					<image class="pulse-cat" src="/static/cat-hug.png" mode="aspectFit" />
+					<image class="pulse-cat" src="/static/sprites/cat-hug.png" mode="aspectFit" />
 					<view class="pulse-core">
 						<view class="pulse-icon">
 							<image class="pulse-wave" src="/static/icons/checkin-wave.svg" mode="aspectFit" />
 						</view>
 					<text class="pulse-label">{{ requiresNfcRescan ? '请再次碰卡验证' : '碰一下打卡' }}</text>
 					</view>
-					<image class="pulse-cat-paws" src="/static/cat-hug-paws.png" mode="aspectFit" />
 				</view>
 
 				<view class="tip-row">
-					<text class="tip-dot"></text>
 					<text class="tip">{{ requiresNfcRescan ? '已打开应用，请再次靠近打卡卡片' : '请靠近打卡设备' }}</text>
 				</view>
 			</view>
@@ -50,8 +47,15 @@
 
 				<view class="record-row">
 					<view class="record-left">
-						<image class="record-icon" :src="latestSuccessTime ? '/static/icons/check-circle.svg' : '/static/icons/clock.svg'" mode="aspectFit" />
-						<text class="record-label" :class="{ 'muted-text': !latestSuccessTime }">最近一次打卡时间</text>
+						<image v-if="latestSuccessTime" class="record-icon" src="/static/icons/check-circle.svg" mode="aspectFit" />
+						<view v-else class="record-empty-visual">
+							<image class="record-empty-cat" :src="catAssets.sleeping.src" mode="aspectFit" />
+							<image class="record-empty-z" :src="catAssets.sleepZ.src" mode="aspectFit" />
+						</view>
+						<view class="record-text-col">
+							<text class="record-label" :class="{ 'muted-text': !latestSuccessTime }">最近一次打卡时间</text>
+							<text v-if="!latestSuccessTime" class="record-empty-hint">靠近设备进行打卡吧</text>
+						</view>
 					</view>
 					<text v-if="latestSuccessTime" class="record-value">{{ latestSuccessTime }}</text>
 				</view>
@@ -77,13 +81,15 @@
 	import AppTabbar from '@/components/app-tabbar/index.vue'
 	import CheckinResult from '@/components/checkin-result/index.vue'
 	import { clearSession, consumeNfcRescanRequired, consumePendingNfcTag, getSession, hasSession } from '@/utils/session'
-	import { getCheckinWindowStatus, getTodayCheckinSummary, hasCheckedInCurrentWindow, saveCheckinRecord } from '@/utils/checkin-record'
-	import { submitCheckin as submitCheckinRequest } from '@/api/checkin'
+	import { getCheckinWindowStatus, getTodayCheckinSummary, normalizeRemoteCheckinRecords, saveCheckinRecord } from '@/utils/checkin-record'
+	import { getMyCheckins, submitCheckin as submitCheckinRequest } from '@/api/checkin'
 	import { NFC_CHECKIN_POINT_ID } from '@/utils/nfc-config'
 	import { releaseNfcSubmissionLock } from '@/utils/nfc-checkin'
 	import { formatClockTime, formatDateText } from '@/utils/time'
 	import { getAvatarFrame, getAvatarFrameId } from '@/utils/avatar-frame'
+	import { getDisplayDepartment } from '@/utils/config'
 	import { getSkinClass, getSkinDecorSrc } from '@/utils/skin'
+	import catAssets from '@/utils/cat-assets'
 
 	export default {
 		components: {
@@ -92,6 +98,7 @@
 		},
 		data() {
 			return {
+				catAssets,
 				userName: '',
 				department: '',
 				avatarUrl: '',
@@ -99,10 +106,11 @@
 				avatarFrameId: 'default',
 				avatarFrameEntry: {},
 				skinClass: 'skin-sunny',
-				decorSrc: '/static/decor-bottom.svg',
+				decorSrc: '/static/decor/decor-bottom.svg',
 				timeText: '',
 				dateText: '',
 				summaryDateKey: '',
+				summaryRequestVersion: 0,
 				timer: null,
 				pageVisible: false,
 				requiresNfcRescan: false,
@@ -118,6 +126,9 @@
 			}
 		},
 		computed: {
+			displayDepartment() {
+				return getDisplayDepartment(this.department)
+			},
 			avatarFrameClass() {
 				return this.avatarFrameEntry.className || ''
 			},
@@ -157,10 +168,10 @@
 				}, 350)
 			}
 			uni.$on('checkin-window-denied', this.handleCheckinDenied)
-			const pendingDenied = uni.getStorageSync('pendingCheckinDenied')
-			if (pendingDenied) {
+			const pendingCheckinDenied = uni.getStorageSync('pendingCheckinDenied')
+			if (pendingCheckinDenied) {
 				uni.removeStorageSync('pendingCheckinDenied')
-				this.handleCheckinDenied(typeof pendingDenied === 'object' ? pendingDenied : null)
+				this.handleCheckinDenied(pendingCheckinDenied)
 			}
 		},
 		onHide() {
@@ -201,12 +212,37 @@
 				if (this.summaryDateKey && this.summaryDateKey !== now.toDateString()) this.refreshTodaySummary()
 			},
 			refreshTodaySummary() {
-				const summary = getTodayCheckinSummary({
+				const session = {
 					userName: this.userName,
 					department: this.department
-				})
+				}
+				const summary = getTodayCheckinSummary(session)
 				this.latestSuccessTime = summary.latestSuccessTime
 				this.summaryDateKey = new Date().toDateString()
+				this.syncRemoteLatestCheckin(session)
+			},
+			// 本地记录只覆盖前台碰卡；后台 NFC 打卡成功只存在后端。
+			// 这里用记录页同款远端数据兜底：默认展示打卡列表最新一条（非今天的记录带日期前缀），避免首页空白
+			async syncRemoteLatestCheckin(session) {
+				const version = ++this.summaryRequestVersion
+				try {
+					const result = await getMyCheckins({ page: 1, pageSize: 5 })
+					if (version !== this.summaryRequestVersion || !this.pageVisible) return
+					const records = normalizeRemoteCheckinRecords(result.items, session)
+					if (!records.length) return
+					const now = new Date()
+					const todayKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0')
+					const latest = records[0]
+					const isToday = latest.dateKey === todayKey
+					if (!this.latestSuccessTime) {
+						this.latestSuccessTime = isToday ? latest.displayTime : latest.displayDate + ' ' + latest.displayTime
+					} else if (isToday && latest.displayTime > this.latestSuccessTime) {
+						this.latestSuccessTime = latest.displayTime
+					}
+				} catch (e) {
+					// 网络或鉴权失败时保持本地展示，不干扰打卡主流程
+					console.error('[首页最近一次打卡] 远端记录获取失败', e && (e.message || e.errMsg))
+				}
 			},
 			startClock() {
 				this.stopClock()
@@ -220,13 +256,15 @@
 					this.timer = null
 				}
 			},
-			logout() {
-				clearSession()
-				this.goLogin()
+			previewAvatar() {
+				if (this.avatarLoadFailed || !this.avatarUrl) return
+				uni.previewImage({
+					urls: [this.avatarUrl]
+				})
 			},
 			handleNfcTag(tag) {
 				if (this.isCheckingIn) {
-					releaseNfcSubmissionLock()
+					uni.showToast({ title: '正在处理本次打卡', icon: 'none' })
 					return
 				}
 				this.requiresNfcRescan = false
@@ -234,11 +272,6 @@
 				if (!windowStatus.allowed) {
 					releaseNfcSubmissionLock()
 					this.handleCheckinDenied()
-					return
-				}
-				if (hasCheckedInCurrentWindow({ userName: this.userName, department: this.department })) {
-					releaseNfcSubmissionLock()
-					this.handleCheckinDenied({ message: '该时间已打过卡' })
 					return
 				}
 				this.submitCheckin({
@@ -257,8 +290,8 @@
 
 				try {
 					if (!payload.pointId) {
-					throw new Error('未识别到有效的打卡点，喵')
-				}
+						throw new Error('未识别到有效的打卡点')
+					}
 
 					const result = await submitCheckinRequest({
 						pointId: payload.pointId,
@@ -282,7 +315,7 @@
 						})
 					}
 				} catch (e) {
-				message = e && (e.message || e.errMsg) ? (e.message || e.errMsg) : '网络失败，喵'
+					message = e && (e.message || e.errMsg) ? (e.message || e.errMsg) : '网络请求失败'
 					console.error('[打卡失败原因]', message)
 					console.error('[打卡失败]', {
 						pointId: payload.pointId || '',
@@ -322,15 +355,8 @@
 					this.resultVisible = false
 				},
 				handleAvatarError() {
-				this.avatarLoadFailed = true
-			},
-			previewAvatar() {
-				if (!this.avatarUrl || this.avatarLoadFailed) return
-				uni.previewImage({
-					urls: [this.avatarUrl],
-					current: this.avatarUrl
-				})
-			}
+					this.avatarLoadFailed = true
+				}
 		}
 	}
 </script>
@@ -344,7 +370,7 @@
 		position: relative;
 		height: 100vh;
 		height: 100dvh;
-		padding: 24rpx 24rpx 112rpx;
+		padding: 24rpx 24rpx calc(124rpx + env(safe-area-inset-bottom));
 		background: linear-gradient(180deg, var(--sk-bg-1) 0%, var(--sk-bg-2) 60%, var(--sk-bg-3) 100%);
 		box-sizing: border-box;
 		overflow: hidden;
@@ -374,7 +400,7 @@
 		align-items: flex-start;
 		justify-content: space-between;
 		gap: 24rpx;
-		margin-top: 100rpx;
+		margin-top: calc(var(--status-bar-height) + 36rpx);
 	}
 
 	.hero-text {
@@ -420,6 +446,19 @@
 		background: var(--sk-card-4);
 		box-shadow: 0 10rpx 24rpx var(--sk-shadow-lg);
 		overflow: hidden;
+	}
+
+	/* 三个大装饰框左右外扩超出 88rpx 头像所在空间，右侧留出余量防止被页面裁切、左侧避免压到文字 */
+	.hero-row .avatar.avatar-frame--heartwing {
+		margin-right: 10rpx;
+	}
+
+	.hero-row .avatar.avatar-frame--nightrose {
+		margin-right: 24rpx;
+	}
+
+	.hero-row .avatar.avatar-frame--bluebow {
+		margin-right: 4rpx;
 	}
 
 	.avatar-image,
@@ -490,35 +529,53 @@
 		border-radius: 50%;
 	}
 
-	/* 小猫从圆形卡片上方探身，双爪搭在圆形上边缘：全身层在卡片后，爪子层在卡片前 */
-	.pulse-cat,
-	.pulse-cat-paws {
+	.pulse-cat {
 		position: absolute;
+		z-index: 3;
 		left: 100rpx;
-		top: -150rpx;
+		top: -166rpx;
 		width: 300rpx;
 		height: 321rpx;
 		pointer-events: none;
-	}
-
-	.pulse-cat {
-		z-index: 1;
-	}
-
-	.pulse-cat-paws {
-		z-index: 3;
+		animation: cat-bob 3s ease-in-out infinite;
 	}
 
 	.pulse-ring-outer {
 		width: 500rpx;
 		height: 500rpx;
 		background: var(--sk-accent-tint-weak);
+		left: 50%;
+		top: 50%;
+		margin: -250rpx 0 0 -250rpx;
 	}
 
 	.pulse-ring-inner {
 		width: 400rpx;
 		height: 400rpx;
 		background: var(--sk-accent-tint);
+		left: 50%;
+		top: 50%;
+		margin: -200rpx 0 0 -200rpx;
+	}
+
+	@keyframes bob-breathe {
+		0%, 100% {
+			transform: translateY(0) scale(1);
+		}
+
+		50% {
+			transform: translateY(-12rpx) scale(1.04);
+		}
+	}
+
+	@keyframes cat-bob {
+		0%, 100% {
+			transform: translateY(0);
+		}
+
+		50% {
+			transform: translateY(-12rpx);
+		}
 	}
 
 	.pulse-core {
@@ -527,14 +584,14 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		justify-content: flex-start;
+		justify-content: center;
 		box-sizing: border-box;
 		width: 308rpx;
 		height: 308rpx;
-		padding-top: 48rpx;
 		border-radius: 50%;
 		background: linear-gradient(180deg, var(--sk-accent-light) 0%, var(--sk-accent) 100%);
 		box-shadow: 0 18rpx 44rpx var(--sk-accent-halo);
+		animation: bob-breathe 3s ease-in-out infinite;
 	}
 
 	.pulse-icon {
@@ -560,16 +617,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 16rpx;
 		margin-top: 28rpx;
-	}
-
-	.tip-dot {
-		width: 18rpx;
-		height: 18rpx;
-		border: 4rpx solid var(--sk-accent-ring);
-		border-radius: 50%;
-		box-shadow: 0 0 0 8rpx var(--sk-accent-halo-soft);
 	}
 
 	.tip {
@@ -610,6 +658,7 @@
 	.records-side {
 		color: var(--sk-text-muted);
 		font-size: 24rpx;
+		line-height: 1.4;
 	}
 
 	.record-row {
@@ -619,6 +668,45 @@
 	.record-left {
 		gap: 18rpx;
 		min-width: 0;
+	}
+
+	.record-text-col {
+		display: flex;
+		flex-direction: column;
+		gap: 4rpx;
+		min-width: 0;
+	}
+
+	.record-empty-hint {
+		color: var(--sk-text-faint);
+		font-size: 20rpx;
+	}
+
+	.record-empty-visual {
+		position: relative;
+		flex-shrink: 0;
+		width: 72rpx;
+		height: 72rpx;
+	}
+
+	.record-empty-cat {
+		width: 72rpx;
+		height: 72rpx;
+	}
+
+	.record-empty-z {
+		position: absolute;
+		top: -12rpx;
+		right: -8rpx;
+		width: 30rpx;
+		height: 30rpx;
+		pointer-events: none;
+		animation: z-float 2.6s ease-out infinite;
+	}
+
+	.avatar-fallback-cat {
+		width: 100%;
+		height: 100%;
 	}
 
 	.record-icon {
@@ -641,9 +729,5 @@
 
 	.muted-text {
 		color: var(--sk-text-faint);
-	}
-
-	.records-side {
-		line-height: 1.4;
 	}
 </style>

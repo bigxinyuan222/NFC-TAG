@@ -33,6 +33,6 @@ export function getSkinClass() {
 export function getSkinDecorSrc() {
 	const skin = getSkin()
 	return skin.id === DEFAULT_SKIN_ID
-		? '/static/decor-bottom.svg'
+		? '/static/decor/decor-bottom.svg'
 		: '/static/decor/decor-bottom-' + skin.id + '.svg'
 }

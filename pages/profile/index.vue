@@ -3,16 +3,16 @@
 		<view class="bg-orb bg-orb-left"></view>
 		<view class="bg-orb bg-orb-right"></view>
 
-		<view class="scroll">
+		<scroll-view class="scroll" scroll-y>
 			<view class="top-glow"></view>
 
 			<view class="profile-head">
 				<view class="avatar-shell" :class="avatarFrameClass" @tap="openFramePicker">
-					<image class="avatar-image" :src="avatarLoadFailed || !avatarUrl ? '/static/icons/avatar-default.svg' : avatarUrl" mode="aspectFill" @error="handleAvatarError" />
+					<image class="avatar-image" :src="avatarLoadFailed || !avatarUrl ? catAssets.playYarn.src : avatarUrl" mode="aspectFill" @error="handleAvatarError" />
 					<image v-if="avatarFrameOverlay" class="avatar-frame-overlay" :src="avatarFrameOverlay" mode="aspectFit" />
 				</view>
 				<text class="profile-name">{{ userName }}</text>
-				<text class="profile-meta">{{ department }}</text>
+				<text class="profile-meta">{{ displayDepartment }}</text>
 			</view>
 
 			<view class="menu-card">
@@ -27,26 +27,44 @@
 				</view>
 			</view>
 
-			<view class="logout-card" @tap="handleLogout">
+			<view class="logout-card" @tap="openLogoutModal">
 				<text class="logout-text">退出登录</text>
 			</view>
 
-			<image class="cheer-banner" src="/static/cat-cheer.png" mode="widthFix" />
+		</scroll-view>
 
+		<!-- 底部插画：位于滚动区之外，固定在底部导航栏正上方，不被滚动内边距和内容高度影响 -->
+		<view class="profile-illustration">
+			<image class="profile-illustration-image" :src="catAssets.comeBanner.src" mode="widthFix" />
 		</view>
 
 		<view v-if="framePickerVisible" class="frame-mask" @tap="closeFramePicker"></view>
 		<view class="frame-panel" :class="{ 'frame-panel--show': framePickerVisible }">
 			<text class="frame-panel-title">选择头像框</text>
-			<view class="frame-options">
+			<scroll-view class="frame-options" scroll-x :show-scrollbar="false">
 				<view v-for="item in avatarFrames" :key="item.id" class="frame-option" @tap="selectFrame(item.id)">
 					<view class="frame-preview-wrap" :class="{ 'frame-preview-wrap--active': avatarFrameId === item.id }">
 						<view class="frame-preview avatar" :class="item.className">
-							<image class="frame-preview-image" :src="avatarLoadFailed || !avatarUrl ? '/static/icons/avatar-default.svg' : avatarUrl" mode="aspectFill" />
+							<image class="frame-preview-image" :src="avatarLoadFailed || !avatarUrl ? catAssets.playYarn.src : avatarUrl" mode="aspectFill" />
 							<image v-if="item.overlay" class="avatar-frame-overlay" :src="item.overlay" mode="aspectFit" />
 						</view>
 					</view>
 					<text class="frame-option-name" :class="{ 'frame-option-name--active': avatarFrameId === item.id }">{{ item.name }}</text>
+				</view>
+			</scroll-view>
+		</view>
+
+		<view v-if="showLogoutModal" class="logout-modal-mask" @tap="closeLogoutModal">
+			<view class="logout-modal-card" @tap.stop>
+				<text class="logout-modal-title">提示</text>
+				<text class="logout-modal-message">确定要退出登录吗？</text>
+				<view class="logout-modal-actions">
+					<view class="logout-modal-btn logout-modal-btn-cancel" @tap="closeLogoutModal">
+						<text class="logout-modal-btn-cancel-text">取消</text>
+					</view>
+					<view class="logout-modal-btn logout-modal-btn-confirm" @tap="confirmLogout">
+						<text class="logout-modal-btn-confirm-text">退出</text>
+					</view>
 				</view>
 			</view>
 		</view>
@@ -59,7 +77,9 @@
 	import AppTabbar from '@/components/app-tabbar/index.vue'
 	import { clearSession, getSession } from '@/utils/session'
 	import { AVATAR_FRAMES, getAvatarFrame, getAvatarFrameId, setAvatarFrameId } from '@/utils/avatar-frame'
+	import { getDisplayDepartment } from '@/utils/config'
 	import { getSkinClass } from '@/utils/skin'
+	import catAssets from '@/utils/cat-assets'
 
 	export default {
 		components: {
@@ -67,6 +87,7 @@
 		},
 		data() {
 			return {
+				catAssets,
 				userName: '',
 				department: '',
 				avatarUrl: '',
@@ -75,6 +96,7 @@
 				avatarFrameEntry: AVATAR_FRAMES[0],
 				avatarFrames: AVATAR_FRAMES,
 				framePickerVisible: false,
+				showLogoutModal: false,
 				skinClass: 'skin-sunny',
 				menuItems: [
 					{ key: 'profile', label: '个人信息', icon: '/static/icons/menu-user.svg', tint: 'rgba(245, 154, 35, 0.14)' },
@@ -85,6 +107,9 @@
 			}
 		},
 		computed: {
+			displayDepartment() {
+				return getDisplayDepartment(this.department)
+			},
 			avatarFrameClass() {
 				return this.avatarFrameEntry.className
 			},
@@ -98,8 +123,8 @@
 			const { userName, department, avatarUrl } = session
 			this.userName = userName
 			this.department = department
-				this.avatarUrl = avatarUrl
-				this.avatarLoadFailed = false
+			this.avatarUrl = avatarUrl
+			this.avatarLoadFailed = false
 			this.avatarFrameId = getAvatarFrameId(session)
 			this.avatarFrameEntry = getAvatarFrame(session)
 
@@ -142,33 +167,32 @@
 					icon: 'none'
 				})
 			},
-			handleLogout() {
-				uni.showModal({
-					title: '提示',
-					content: '确定要退出登录吗？',
-					success: (res) => {
-						if (res.confirm) {
-							clearSession()
-							this.goLogin()
-						}
-					}
-				})
+			openLogoutModal() {
+				this.showLogoutModal = true
 			},
-				handleAvatarError() {
-					this.avatarLoadFailed = true
-				},
-				openFramePicker() {
-					this.framePickerVisible = true
-				},
-				closeFramePicker() {
-					this.framePickerVisible = false
-				},
-				selectFrame(frameId) {
-					setAvatarFrameId(getSession(), frameId)
-					this.avatarFrameId = frameId
-					this.avatarFrameEntry = getAvatarFrame(getSession())
-					this.framePickerVisible = false
-				}
+			closeLogoutModal() {
+				this.showLogoutModal = false
+			},
+			confirmLogout() {
+				this.showLogoutModal = false
+				clearSession()
+				this.goLogin()
+			},
+			handleAvatarError() {
+				this.avatarLoadFailed = true
+			},
+			openFramePicker() {
+				this.framePickerVisible = true
+			},
+			closeFramePicker() {
+				this.framePickerVisible = false
+			},
+			selectFrame(frameId) {
+				setAvatarFrameId(getSession(), frameId)
+				this.avatarFrameId = frameId
+				this.avatarFrameEntry = getAvatarFrame(getSession())
+				this.framePickerVisible = false
+			}
 		}
 	}
 </script>
@@ -180,6 +204,8 @@
 
 	.wrap {
 		position: relative;
+		display: flex;
+		flex-direction: column;
 		height: 100vh;
 		height: 100dvh;
 		background: linear-gradient(180deg, var(--sk-bg-1) 0%, var(--sk-bg-2) 60%, var(--sk-bg-3) 100%);
@@ -210,9 +236,10 @@
 	.scroll {
 		position: relative;
 		z-index: 1;
-		height: 100%;
+		flex: 1;
+		min-height: 0;
 		box-sizing: border-box;
-		padding: 36rpx 32rpx 170rpx;
+		padding: 36rpx 32rpx 24rpx;
 	}
 
 	.top-glow {
@@ -329,17 +356,25 @@
 	}
 
 	.logout-text {
-		color: #E0685F;
+		color: var(--sk-danger);
 		font-size: 30rpx;
 		font-weight: 600;
 	}
 
-	.cheer-banner {
-		position: absolute;
-		left: 0;
-		right: 0;
+	/* 底部插画：铺满整屏宽度，高度由原图比例自然决定，下沿紧贴底部导航栏上沿 */
+	.profile-illustration {
+		position: relative;
+		z-index: 1;
+		flex: none;
 		width: 100%;
-		bottom: calc(108rpx + env(safe-area-inset-bottom));
+		margin-bottom: calc(108rpx + env(safe-area-inset-bottom) + 6rpx);
+	}
+
+	.profile-illustration-image {
+		display: block;
+		width: 100%;
+		height: auto;
+		pointer-events: none;
 	}
 
 	.frame-mask {
@@ -381,16 +416,16 @@
 	}
 
 	.frame-options {
-		display: flex;
-		justify-content: space-between;
 		margin-top: 36rpx;
+		white-space: nowrap;
 	}
 
 	.frame-option {
-		display: flex;
+		display: inline-flex;
 		flex-direction: column;
 		align-items: center;
-		flex: 1;
+		width: 124rpx;
+		vertical-align: top;
 	}
 
 	.frame-preview-wrap {
@@ -409,14 +444,27 @@
 		height: 92rpx;
 		border-radius: 50%;
 		background: var(--sk-bg-1);
-		overflow: hidden;
 		box-sizing: border-box;
+		position: relative;
+		overflow: visible;
 	}
 
 	.frame-preview-image {
 		width: 100%;
 		height: 100%;
 		border-radius: 50%;
+	}
+
+	/* 云端/心翼/夜玫/蓝蝶 PNG 装饰外扩较大，选择面板内统一按 128% 显示，
+	   头像图片一律填满 92rpx 容器，由 PNG 自身的透明环自然遮罩 */
+	.frame-preview.avatar-frame--sky .avatar-frame-overlay,
+	.frame-preview.avatar-frame--heartwing .avatar-frame-overlay,
+	.frame-preview.avatar-frame--nightrose .avatar-frame-overlay,
+	.frame-preview.avatar-frame--bluebow .avatar-frame-overlay {
+		left: -14%;
+		top: -14%;
+		width: 128%;
+		height: 128%;
 	}
 
 	.frame-option-name {
@@ -427,6 +475,80 @@
 
 	.frame-option-name--active {
 		color: var(--sk-accent);
+		font-weight: 600;
+	}
+
+	.logout-modal-mask {
+		position: fixed;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 999;
+		background: rgba(30, 22, 12, 0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.logout-modal-card {
+		width: 600rpx;
+		max-width: 88vw;
+		padding: 40rpx 32rpx 32rpx;
+		box-sizing: border-box;
+		border-radius: 32rpx;
+		background: rgba(255, 255, 255, 0.98);
+		box-shadow: 0 18rpx 50rpx rgba(60, 40, 15, 0.18);
+		text-align: center;
+	}
+
+	.logout-modal-title {
+		display: block;
+		color: var(--sk-text);
+		font-size: 32rpx;
+		font-weight: 600;
+	}
+
+	.logout-modal-message {
+		display: block;
+		margin-top: 22rpx;
+		color: var(--sk-text-3);
+		font-size: 28rpx;
+		line-height: 1.6;
+	}
+
+	.logout-modal-actions {
+		display: flex;
+		gap: 20rpx;
+		margin-top: 36rpx;
+	}
+
+	.logout-modal-btn {
+		flex: 1;
+		height: 84rpx;
+		border-radius: 20rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.logout-modal-btn-cancel {
+		background: var(--sk-chip);
+	}
+
+	.logout-modal-btn-cancel-text {
+		color: var(--sk-text-3);
+		font-size: 28rpx;
+		font-weight: 600;
+	}
+
+	.logout-modal-btn-confirm {
+		background: linear-gradient(135deg, var(--sk-accent-light) 0%, var(--sk-accent) 100%);
+	}
+
+	.logout-modal-btn-confirm-text {
+		color: #ffffff;
+		font-size: 28rpx;
 		font-weight: 600;
 	}
 

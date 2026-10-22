@@ -13,7 +13,7 @@
 
 		<scroll-view class="scroll" scroll-y>
 			<view class="avatar-card">
-				<image class="avatar-image" :src="avatarLoadFailed || !form.avatarUrl ? '/static/icons/avatar-default.svg' : form.avatarUrl" mode="aspectFill" @tap="chooseAvatar" @error="handleAvatarError" />
+				<image class="avatar-image" :src="avatarLoadFailed || !form.avatarUrl ? catAssets.playYarn.src : form.avatarUrl" mode="aspectFill" @tap="chooseAvatar" @error="handleAvatarError" />
 				<text class="avatar-tip">点击更换头像</text>
 			</view>
 
@@ -24,16 +24,6 @@
 						<text class="readonly-text">{{ form.userName }}</text>
 						<text class="readonly-tip">不可修改</text>
 					</view>
-				</view>
-
-				<view class="field">
-					<text class="field-label">部门</text>
-					<picker class="department-picker" mode="selector" :range="departmentOptions" :value="departmentIndex" @change="handleDepartmentChange">
-						<view class="field-input picker-wrap">
-							<text class="department-value" :class="{ 'field-placeholder': !form.department }">{{ form.department || '请选择部门' }}</text>
-							<image class="picker-arrow" src="/static/icons/chevron-right.svg" mode="aspectFit" />
-						</view>
-					</picker>
 				</view>
 
 				<view class="field" @tap="openPasswordModal">
@@ -78,18 +68,17 @@
 	import { changePassword } from '@/api/auth'
 	import { clearSession, getSession, saveSession } from '@/utils/session'
 	import { getSkinClass } from '@/utils/skin'
+	import catAssets from '@/utils/cat-assets'
 
 	export default {
 		data() {
 			return {
+				catAssets,
 				avatarLoadFailed: false,
 				form: {
 					userName: '',
-					department: '',
 					avatarUrl: ''
 				},
-				departmentOptions: ['27鹰飞', '26鹰飞', '全栈二期', 'ROS机器人'],
-				departmentIndex: 0,
 				passwordForm: {
 					oldPassword: '',
 					newPassword: '',
@@ -102,13 +91,10 @@
 		},
 		onShow() {
 			this.skinClass = getSkinClass()
-			const { userName, department, avatarUrl } = getSession()
+			const { userName, avatarUrl } = getSession()
 			this.avatarLoadFailed = false
 			this.form.userName = userName
-			this.form.department = department
 			this.form.avatarUrl = avatarUrl
-			const departmentIndex = this.departmentOptions.indexOf(department)
-			this.departmentIndex = departmentIndex >= 0 ? departmentIndex : 0
 		},
 		methods: {
 			goBack() {
@@ -119,11 +105,6 @@
 						})
 					}
 				})
-			},
-			handleDepartmentChange(event) {
-				const index = Number(event.detail.value)
-				this.departmentIndex = index
-				this.form.department = this.departmentOptions[index] || ''
 			},
 			handlePasswordInput(key, event) {
 				this.passwordForm[key] = event.detail.value
@@ -201,16 +182,8 @@
 				this.avatarLoadFailed = true
 			},
 			saveProfile() {
-				const userName = (this.form.userName || '').trim()
-				const department = (this.form.department || '').trim()
-
-				if (!userName || !department) {
-					uni.showToast({
-						title: '请填写完整信息',
-						icon: 'none'
-					})
-					return
-				}
+				// 部门以登录返回为准（页面已不再提供修改），这里原样保留，避免影响打卡记录归属
+				const { userName, department } = getSession()
 
 				saveSession({
 					userName,
@@ -474,26 +447,6 @@
 	.readonly-tip {
 		color: var(--sk-text-faint);
 		font-size: 24rpx;
-	}
-
-	.picker-wrap {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-	}
-
-	.department-value {
-		font-size: 28rpx;
-	}
-
-	.picker-arrow {
-		width: 32rpx;
-		height: 32rpx;
-		flex-shrink: 0;
-	}
-
-	.field-placeholder {
-		color: var(--sk-text-faint);
 	}
 
 </style>

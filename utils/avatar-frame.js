@@ -4,7 +4,11 @@ export const AVATAR_FRAMES = [
 	{ id: 'mint', name: '薄荷', className: 'avatar-frame--mint', overlay: '' },
 	{ id: 'violet', name: '星梦', className: 'avatar-frame--violet', overlay: '' },
 	{ id: 'gold', name: '鎏金', className: 'avatar-frame--gold', overlay: '' },
-	{ id: 'catpaw', name: '猫爪', className: 'avatar-frame--catpaw avatar-shape--catpaw', overlay: '/static/frames/frame-catpaw.svg' }
+	{ id: 'catpaw', name: '猫爪', className: 'avatar-frame--catpaw avatar-shape--catpaw', overlay: '/static/frames/frame-catpaw.svg' },
+	{ id: 'sky', name: '云端', className: 'avatar-frame--sky', overlay: '/static/frames/frame-sky.png' },
+	{ id: 'heartwing', name: '心翼', className: 'avatar-frame--heartwing', overlay: '/static/frames/frame-heartwing.png' },
+	{ id: 'nightrose', name: '夜玫', className: 'avatar-frame--nightrose', overlay: '/static/frames/frame-nightrose.png' },
+	{ id: 'bluebow', name: '蓝蝶', className: 'avatar-frame--bluebow', overlay: '/static/frames/frame-bluebow.png' }
 ]
 
 const STORAGE_PREFIX = 'avatarFrame:'
