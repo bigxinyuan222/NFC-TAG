@@ -1,5 +1,10 @@
 export const BASE_URL = 'http://43.143.211.94:8080'
 
+// 钉钉开放平台移动应用：Client ID（旧 AppKey）
+export const DINGTALK_APP_KEY = 'dingap2ebzsizxigniub'
+// 钉钉授权回调地址，需与钉钉后台「重定向 URL」一致；原生插件会拦截，不要求该地址真实可访问
+export const DINGTALK_REDIRECT_URL = 'https://bigxinyuan222.github.io/urban-pancake/tz.html'
+
 // 与 manifest.json 的 versionName 保持一致
 export const APP_VERSION = '1.0.0'
 

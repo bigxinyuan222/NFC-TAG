@@ -52,6 +52,16 @@
 					<text class="switch-tip">{{ isLoginMode ? '还没有账号？' : '已有账号？' }}</text>
 					<text class="switch-link">{{ isLoginMode ? '点击去注册' : '点击去登录' }}</text>
 				</view>
+
+				<view v-if="isLoginMode" class="divider">
+					<view class="divider-line"></view>
+					<text class="divider-text">其他登录方式</text>
+					<view class="divider-line"></view>
+				</view>
+				<view v-if="isLoginMode" class="ding-btn" @tap.stop="dingLogin">
+					<text class="ding-badge">钉</text>
+					<text class="ding-text">钉钉一键登录</text>
+				</view>
 			</view>
 		</view>
 
@@ -67,8 +77,9 @@
 
 <script>
 	import { getSession, hasSession, saveSession } from '@/utils/session'
-	import { registerAccount, loginAccount } from '@/api/auth'
-	import { DEPARTMENT_OPTIONS } from '@/utils/config'
+	import { registerAccount, loginAccount, loginByDingTalk } from '@/api/auth'
+	import { DEPARTMENT_OPTIONS, DINGTALK_APP_KEY, DINGTALK_REDIRECT_URL } from '@/utils/config'
+	import { authLogin } from '@/uni_modules/open-dinglogin'
 
 	export default {
 		data() {
@@ -272,6 +283,39 @@
 					title: error && error.message ? error.message : '网络请求失败',
 					icon: 'none'
 				})
+			},
+			async dingLogin() {
+				if (this.isSubmitting) return
+				uni.hideKeyboard()
+				this.isSubmitting = true
+				uni.showLoading({ title: '正在唤起钉钉...', mask: true })
+				try {
+					const auth = await authLogin({
+						appId: DINGTALK_APP_KEY,
+						redirectUrl: DINGTALK_REDIRECT_URL,
+						responseType: 'code',
+						scope: 'openid',
+						prompt: 'consent',
+						state: Date.now() + ''
+					})
+					if (!auth.authCode) {
+						uni.hideLoading()
+						uni.showToast({ title: auth.errMsg || '钉钉授权失败', icon: 'none' })
+						return
+					}
+					uni.showLoading({ title: '正在登录...', mask: true })
+					const result = await loginByDingTalk(auth.authCode)
+					uni.hideLoading()
+					this.saveUserSession(result)
+					uni.showToast({ title: '登录成功', icon: 'success' })
+					this.goCheckin()
+				} catch (error) {
+					uni.hideLoading()
+					console.error('[钉钉登录失败]', error)
+					this.showRequestError(error)
+				} finally {
+					this.isSubmitting = false
+				}
 			}
 		}
 	}
@@ -444,6 +488,55 @@
 	.switch-link {
 		margin-left: 8rpx;
 		color: #F59A23;
+		font-weight: 600;
+	}
+
+	.divider {
+		display: flex;
+		align-items: center;
+		margin-top: 34rpx;
+	}
+
+	.divider-line {
+		flex: 1;
+		height: 1rpx;
+		background: #EDE0CC;
+	}
+
+	.divider-text {
+		padding: 0 20rpx;
+		color: #B9A88F;
+		font-size: 22rpx;
+	}
+
+	.ding-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-top: 26rpx;
+		height: 84rpx;
+		border-radius: 42rpx;
+		background: #EEF4FF;
+		border: 1rpx solid #C9DCFF;
+	}
+
+	.ding-badge {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 40rpx;
+		height: 40rpx;
+		margin-right: 14rpx;
+		border-radius: 10rpx;
+		background: #1677FF;
+		color: #ffffff;
+		font-size: 26rpx;
+		font-weight: 600;
+	}
+
+	.ding-text {
+		color: #1677FF;
+		font-size: 30rpx;
 		font-weight: 600;
 	}
 

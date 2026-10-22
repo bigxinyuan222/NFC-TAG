@@ -5,22 +5,18 @@
     "versionName" : "1.3.0",
     "versionCode" : "100",
     "transformPx" : false,
-   
     "app-plus" : {
         "usingComponents" : true,
         "nvueStyleCompiler" : "uni-app",
         "compilerVersion" : 3,
         "splashscreen" : {
-            "alwaysShowBeforeRender" : true,
+            "alwaysShowBeforeRender" : false,
             "waiting" : true,
             "autoclose" : true,
             "delay" : 0
         },
-        
         "modules" : {},
-    
         "distribute" : {
-            
             "android" : {
                 "permissions" : [
                     "<uses-permission android:name=\"android.permission.CHANGE_NETWORK_STATE\"/>",
@@ -42,17 +38,33 @@
                 ],
                 "schemes" : [ "mycheckin" ]
             },
-           
             "ios" : {
                 "dSYMs" : false
             },
-            
-            "sdkConfigs" : {}
+            "sdkConfigs" : {},
+            "splashscreen" : {
+                "androidStyle" : "default",
+                "android" : {
+                    "hdpi" : "D:/桌面/Snipaste_2026-10-17_21-59-59.png",
+                    "xhdpi" : "D:/桌面/Snipaste_2026-10-17_21-59-59.png",
+                    "xxhdpi" : "D:/桌面/Snipaste_2026-10-17_21-59-59.png"
+                },
+                "iosStyle" : "common"
+            },
+            "icons" : {
+                "android" : {
+                    "hdpi" : "D:/桌面/Snipaste_2026-10-16_19-36-31.png",
+                    "xhdpi" : "D:/桌面/Snipaste_2026-10-16_19-36-31.png",
+                    "xxhdpi" : "D:/桌面/Snipaste_2026-10-16_19-36-31.png",
+                    "xxxhdpi" : "D:/桌面/Snipaste_2026-10-16_19-36-31.png"
+                },
+                "ios" : {
+                    "appstore" : ""
+                }
+            }
         }
     },
-   
     "quickapp" : {},
-    
     "mp-weixin" : {
         "appid" : "",
         "setting" : {
