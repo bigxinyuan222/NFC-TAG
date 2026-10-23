@@ -15,6 +15,8 @@
 						<image class="avatar-fallback-cat" :src="catAssets.playYarn.src" mode="aspectFill" />
 					</view>
 					<image v-if="avatarFrameOverlay" class="avatar-frame-overlay" :src="avatarFrameOverlay" mode="aspectFit" />
+					<image v-if="avatarFrameEntry.handLeft" class="avatar-frame-hand avatar-frame-hand--left" :src="avatarFrameEntry.handLeft" mode="aspectFit" />
+					<image v-if="avatarFrameEntry.handRight" class="avatar-frame-hand avatar-frame-hand--right" :src="avatarFrameEntry.handRight" mode="aspectFit" />
 				</view>
 			</view>
 
@@ -448,7 +450,7 @@
 		overflow: hidden;
 	}
 
-	/* 三个大装饰框左右外扩超出 88rpx 头像所在空间，右侧留出余量防止被页面裁切、左侧避免压到文字 */
+	/* 四个大装饰框左右外扩超出 88rpx 头像所在空间，右侧留出余量防止被页面裁切、左侧避免压到文字 */
 	.hero-row .avatar.avatar-frame--heartwing {
 		margin-right: 10rpx;
 	}
@@ -459,6 +461,10 @@
 
 	.hero-row .avatar.avatar-frame--bluebow {
 		margin-right: 4rpx;
+	}
+
+	.hero-row .avatar.avatar-frame--bunnyred {
+		margin-right: 10rpx;
 	}
 
 	.avatar-image,

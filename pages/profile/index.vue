@@ -10,6 +10,8 @@
 				<view class="avatar-shell" :class="avatarFrameClass" @tap="openFramePicker">
 					<image class="avatar-image" :src="avatarLoadFailed || !avatarUrl ? catAssets.playYarn.src : avatarUrl" mode="aspectFill" @error="handleAvatarError" />
 					<image v-if="avatarFrameOverlay" class="avatar-frame-overlay" :src="avatarFrameOverlay" mode="aspectFit" />
+					<image v-if="avatarFrameEntry.handLeft" class="avatar-frame-hand avatar-frame-hand--left" :src="avatarFrameEntry.handLeft" mode="aspectFit" />
+					<image v-if="avatarFrameEntry.handRight" class="avatar-frame-hand avatar-frame-hand--right" :src="avatarFrameEntry.handRight" mode="aspectFit" />
 				</view>
 				<text class="profile-name">{{ userName }}</text>
 				<text class="profile-meta">{{ displayDepartment }}</text>
@@ -47,6 +49,8 @@
 						<view class="frame-preview avatar" :class="item.className">
 							<image class="frame-preview-image" :src="avatarLoadFailed || !avatarUrl ? catAssets.playYarn.src : avatarUrl" mode="aspectFill" />
 							<image v-if="item.overlay" class="avatar-frame-overlay" :src="item.overlay" mode="aspectFit" />
+							<image v-if="item.handLeft" class="avatar-frame-hand avatar-frame-hand--left" :src="item.handLeft" mode="aspectFit" />
+							<image v-if="item.handRight" class="avatar-frame-hand avatar-frame-hand--right" :src="item.handRight" mode="aspectFit" />
 						</view>
 					</view>
 					<text class="frame-option-name" :class="{ 'frame-option-name--active': avatarFrameId === item.id }">{{ item.name }}</text>
@@ -460,7 +464,15 @@
 	.frame-preview.avatar-frame--sky .avatar-frame-overlay,
 	.frame-preview.avatar-frame--heartwing .avatar-frame-overlay,
 	.frame-preview.avatar-frame--nightrose .avatar-frame-overlay,
-	.frame-preview.avatar-frame--bluebow .avatar-frame-overlay {
+	.frame-preview.avatar-frame--bluebow .avatar-frame-overlay,
+	.frame-preview.avatar-frame--bunnyred .avatar-frame-overlay {
+		left: -14%;
+		top: -14%;
+		width: 128%;
+		height: 128%;
+	}
+
+	.frame-preview.avatar-frame--bunnyred .avatar-frame-hand {
 		left: -14%;
 		top: -14%;
 		width: 128%;
