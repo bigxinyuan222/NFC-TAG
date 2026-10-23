@@ -459,13 +459,15 @@ page {
 	border-radius: 50%;
 }
 
-/* 心翼/夜玫/蓝蝶框：PNG 覆盖层自带装饰环，同云端框一样去掉白底环并放开裁切 */
+/* 心翼/夜玫/蓝蝶/兔红框：PNG 覆盖层自带装饰环，同云端框一样去掉白底环并放开裁切 */
 .avatar-shell.avatar-frame--heartwing,
 .avatar.avatar-frame--heartwing,
 .avatar-shell.avatar-frame--nightrose,
 .avatar.avatar-frame--nightrose,
 .avatar-shell.avatar-frame--bluebow,
-.avatar.avatar-frame--bluebow {
+.avatar.avatar-frame--bluebow,
+.avatar-shell.avatar-frame--bunnyred,
+.avatar.avatar-frame--bunnyred {
 	position: relative;
 	overflow: visible;
 	box-shadow: none;
@@ -484,11 +486,15 @@ page {
 .avatar-frame--bluebow .avatar-image,
 .avatar-frame--bluebow .avatar-fallback,
 .avatar-frame--bluebow .avatar-fallback-cat,
-.avatar-frame--bluebow .frame-preview-image {
+.avatar-frame--bluebow .frame-preview-image,
+.avatar-frame--bunnyred .avatar-image,
+.avatar-frame--bunnyred .avatar-fallback,
+.avatar-frame--bunnyred .avatar-fallback-cat,
+.avatar-frame--bunnyred .frame-preview-image {
 	border-radius: 50%;
 }
 
-/* 三个框的装饰外扩比例不同，覆盖层尺寸按各自素材设定（内圆对准头像圆） */
+/* 四个框的装饰外扩比例不同，覆盖层尺寸按各自素材设定（内圆对准头像圆） */
 .avatar-frame--heartwing .avatar-frame-overlay {
 	left: -37.5%;
 	top: -37.5%;
@@ -508,6 +514,44 @@ page {
 	top: -30%;
 	width: 160%;
 	height: 160%;
+}
+
+.avatar-frame--bunnyred .avatar-frame-overlay {
+	left: -36.5%;
+	top: -36.5%;
+	width: 173%;
+	height: 173%;
+}
+
+/* 兔红：两只手拆成独立图层，绕手套内侧支点做一开一合摆动 */
+.avatar-frame--bunnyred .avatar-frame-hand {
+	position: absolute;
+	left: -36.5%;
+	top: -36.5%;
+	width: 173%;
+	height: 173%;
+	z-index: 4;
+	pointer-events: none;
+}
+
+.avatar-frame--bunnyred .avatar-frame-hand--left {
+	transform-origin: 33.5% 90.4%;
+	animation: bunny-hand-left 2.4s ease-in-out infinite;
+}
+
+.avatar-frame--bunnyred .avatar-frame-hand--right {
+	transform-origin: 66.5% 90.4%;
+	animation: bunny-hand-right 2.4s ease-in-out infinite;
+}
+
+@keyframes bunny-hand-left {
+	0%, 100% { transform: rotate(0deg); }
+	50% { transform: rotate(-7deg); }
+}
+
+@keyframes bunny-hand-right {
+	0%, 100% { transform: rotate(0deg); }
+	50% { transform: rotate(7deg); }
 }
 
 /* ===================== 猫咪与特效共享动画 =====================
@@ -548,7 +592,8 @@ page {
 	.record-empty-z,
 	.result-success-cat,
 	.result-sparkle,
-	.cheer-banner-cat {
+	.cheer-banner-cat,
+	.avatar-frame-hand {
 		animation: none !important;
 	}
 }

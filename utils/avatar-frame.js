@@ -8,7 +8,8 @@ export const AVATAR_FRAMES = [
 	{ id: 'sky', name: '云端', className: 'avatar-frame--sky', overlay: '/static/frames/frame-sky.png' },
 	{ id: 'heartwing', name: '心翼', className: 'avatar-frame--heartwing', overlay: '/static/frames/frame-heartwing.png' },
 	{ id: 'nightrose', name: '夜玫', className: 'avatar-frame--nightrose', overlay: '/static/frames/frame-nightrose.png' },
-	{ id: 'bluebow', name: '蓝蝶', className: 'avatar-frame--bluebow', overlay: '/static/frames/frame-bluebow.png' }
+	{ id: 'bluebow', name: '蓝蝶', className: 'avatar-frame--bluebow', overlay: '/static/frames/frame-bluebow.png' },
+	{ id: 'bunnyred', name: '兔红', className: 'avatar-frame--bunnyred', overlay: '/static/frames/frame-bunnyred.png', handLeft: '/static/frames/frame-bunnyred-hand-l.png', handRight: '/static/frames/frame-bunnyred-hand-r.png' }
 ]
 
 const STORAGE_PREFIX = 'avatarFrame:'
