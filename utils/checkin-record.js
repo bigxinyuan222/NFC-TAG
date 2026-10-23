@@ -303,3 +303,15 @@ export function getTodayCheckinSummary(session) {
 export function getMonthlyCheckinStats(session, date = new Date()) {
 	return buildMonthlyCheckinStats(getUserCheckinRecords(session), date, { canCalculateMissing: true })
 }
+
+/**
+ * 获取用户累计出勤天数（所有打卡记录中有打卡的日期去重计数）
+ */
+export function getTotalAttendDays(session) {
+	const records = getUserCheckinRecords(session)
+	const daySet = new Set()
+	records
+		.filter((record) => record.status === 'success' && record.dateKey)
+		.forEach((record) => daySet.add(record.dateKey))
+	return daySet.size
+}
