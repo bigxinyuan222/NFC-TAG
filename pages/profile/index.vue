@@ -73,6 +73,20 @@
 			</view>
 		</view>
 
+		<view v-if="frameLockVisible" class="frame-lock-mask" @tap="closeFrameLockModal">
+			<view class="frame-lock-card" @tap.stop>
+				<view class="frame-lock-icon">
+					<image src="/static/icons/lock.svg" mode="aspectFit" />
+				</view>
+				<text class="frame-lock-title">{{ frameLockData.name }}</text>
+				<text class="frame-lock-message">该头像框需出勤满 {{ frameLockData.requiredDays }} 天解锁</text>
+				<text class="frame-lock-remain">你还差 {{ frameLockData.remainDays }} 天</text>
+				<view class="frame-lock-btn" @tap="closeFrameLockModal">
+					<text class="frame-lock-btn-text">我知道了</text>
+				</view>
+			</view>
+		</view>
+
 		<app-tabbar current="profile" :skin="skinClass" />
 	</view>
 </template>
@@ -80,9 +94,11 @@
 <script>
 	import AppTabbar from '@/components/app-tabbar/index.vue'
 	import { clearSession, getSession } from '@/utils/session'
-	import { AVATAR_FRAMES, getAvatarFrame, getAvatarFrameId, setAvatarFrameId } from '@/utils/avatar-frame'
+	import { AVATAR_FRAMES, getAvatarFrame, getAvatarFrameId, setAvatarFrameId, getAvailableFrames } from '@/utils/avatar-frame'
 	import { getDisplayDepartment } from '@/utils/config'
 	import { getSkinClass } from '@/utils/skin'
+	import { normalizeRemoteCheckinRecords } from '@/utils/checkin-record'
+	import { getMyCheckins } from '@/api/checkin'
 	import catAssets from '@/utils/cat-assets'
 
 	export default {
@@ -98,9 +114,11 @@
 				avatarLoadFailed: false,
 				avatarFrameId: 'default',
 				avatarFrameEntry: AVATAR_FRAMES[0],
-				avatarFrames: AVATAR_FRAMES,
+				avatarFrames: getAvailableFrames(getSession()),
 				framePickerVisible: false,
 				showLogoutModal: false,
+				frameLockVisible: false,
+				frameLockData: { name: '', requiredDays: 0, remainDays: 0 },
 				skinClass: 'skin-sunny',
 				menuItems: [
 					{ key: 'profile', label: '个人信息', icon: '/static/icons/menu-user.svg', tint: 'rgba(245, 154, 35, 0.14)' },
@@ -129,6 +147,7 @@
 			this.department = department
 			this.avatarUrl = avatarUrl
 			this.avatarLoadFailed = false
+			this.avatarFrames = getAvailableFrames(session)
 			this.avatarFrameId = getAvatarFrameId(session)
 			this.avatarFrameEntry = getAvatarFrame(session)
 
@@ -192,10 +211,56 @@
 				this.framePickerVisible = false
 			},
 			selectFrame(frameId) {
+				const frame = this.avatarFrames.find((f) => f.id === frameId)
+				if (frame && frame.requiredDays) {
+					this.checkFrameUnlock(frame)
+					return
+				}
+				this.applyFrame(frameId)
+			},
+			applyFrame(frameId) {
 				setAvatarFrameId(getSession(), frameId)
 				this.avatarFrameId = frameId
 				this.avatarFrameEntry = getAvatarFrame(getSession())
 				this.framePickerVisible = false
+			},
+			async checkFrameUnlock(frame) {
+				uni.showLoading({ title: '校验出勤天数...', mask: true })
+				try {
+					const attendDays = await this.fetchAttendDays(frame.requiredDays)
+					uni.hideLoading()
+					if (attendDays < frame.requiredDays) {
+						this.frameLockData = {
+							name: frame.name,
+							requiredDays: frame.requiredDays,
+							remainDays: frame.requiredDays - attendDays
+						}
+						this.frameLockVisible = true
+						return
+					}
+					this.applyFrame(frame.id)
+				} catch (error) {
+					uni.hideLoading()
+					uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
+				}
+			},
+			async fetchAttendDays(targetDays) {
+				const daySet = new Set()
+				let page = 0
+				let hasMore = true
+				while (hasMore && daySet.size < targetDays) {
+					const result = await getMyCheckins({ page: page + 1, pageSize: 50 })
+					normalizeRemoteCheckinRecords(result.items, {
+						userName: this.userName,
+						department: this.department
+					}).forEach((record) => daySet.add(record.dateKey))
+					hasMore = result.items.length > 0 && (page + 1) * result.pageSize < result.total
+					page++
+				}
+				return daySet.size
+			},
+			closeFrameLockModal() {
+				this.frameLockVisible = false
 			}
 		}
 	}
@@ -459,7 +524,7 @@
 		border-radius: 50%;
 	}
 
-	/* 云端/心翼/夜玫/蓝蝶 PNG 装饰外扩较大，选择面板内统一按 128% 显示，
+	/* 云端/心翼/夜玫/蓝蝶/兔红 PNG 装饰外扩较大，选择面板内统一按 128% 显示，
 	   头像图片一律填满 92rpx 容器，由 PNG 自身的透明环自然遮罩 */
 	.frame-preview.avatar-frame--sky .avatar-frame-overlay,
 	.frame-preview.avatar-frame--heartwing .avatar-frame-overlay,
@@ -477,6 +542,28 @@
 		top: -14%;
 		width: 128%;
 		height: 128%;
+	}
+
+	/* 三个专属框内孔比例不同，预览时各自缩放使头像大小一致 */
+	.frame-preview.avatar-frame--king .avatar-frame-overlay {
+		left: 0%;
+		top: -8%;
+		width: 115%;
+		height: 115%;
+	}
+
+	.frame-preview.avatar-frame--crown .avatar-frame-overlay {
+		left: -9%;
+		top: -13%;
+		width: 118%;
+		height: 118%;
+	}
+
+	.frame-preview.avatar-frame--demon .avatar-frame-overlay {
+		left: -13%;
+		top: -21%;
+		width: 126%;
+		height: 126%;
 	}
 
 	.frame-option-name {
@@ -561,6 +648,88 @@
 	.logout-modal-btn-confirm-text {
 		color: #ffffff;
 		font-size: 28rpx;
+		font-weight: 600;
+	}
+
+	/* 头像框解锁提示弹窗：复用主题变量 */
+	.frame-lock-mask {
+		position: fixed;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 999;
+		background: rgba(30, 22, 12, 0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.frame-lock-card {
+		width: 600rpx;
+		max-width: 88vw;
+		padding: 48rpx 36rpx 36rpx;
+		box-sizing: border-box;
+		border-radius: 32rpx;
+		background: rgba(255, 255, 255, 0.98);
+		border: 1rpx solid rgba(0, 0, 0, 0.06);
+		box-shadow: 0 18rpx 50rpx rgba(0, 0, 0, 0.22);
+		text-align: center;
+	}
+
+	.frame-lock-icon {
+		width: 88rpx;
+		height: 88rpx;
+		margin: 0 auto 24rpx;
+		border-radius: 50%;
+		background: var(--sk-chip);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--sk-accent);
+	}
+
+	.frame-lock-icon image {
+		width: 48rpx;
+		height: 48rpx;
+	}
+
+	.frame-lock-title {
+		display: block;
+		color: var(--sk-text);
+		font-size: 34rpx;
+		font-weight: 700;
+	}
+
+	.frame-lock-message {
+		display: block;
+		margin-top: 20rpx;
+		color: var(--sk-text-3);
+		font-size: 28rpx;
+		line-height: 1.5;
+	}
+
+	.frame-lock-remain {
+		display: block;
+		margin-top: 12rpx;
+		color: var(--sk-accent);
+		font-size: 30rpx;
+		font-weight: 600;
+	}
+
+	.frame-lock-btn {
+		margin-top: 36rpx;
+		height: 88rpx;
+		border-radius: 20rpx;
+		background: linear-gradient(135deg, var(--sk-accent-light) 0%, var(--sk-accent) 100%);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.frame-lock-btn-text {
+		color: #ffffff;
+		font-size: 30rpx;
 		font-weight: 600;
 	}
 

@@ -3,17 +3,44 @@ const STORAGE_KEYS = {
 	department: 'department',
 	token: 'token',
 	avatarUrl: 'avatarUrl',
+	dingtalkUserIdPrefix: 'dingtalkUserIdPrefix',
 	nfcRescanRequiredAt: 'nfcRescanRequiredAt',
 	pendingNfcTag: 'pendingNfcTag'
 }
 
 const LEGACY_KEYS = ['userId']
 
+// 部门写死的用户 uid 列表：这些用户无论后端返回什么部门，统一显示为指定部门
+const DEPARTMENT_OVERRIDE = {
+	175: '27鹰飞',
+	310: '27鹰飞'
+}
+
+// 从 JWT token 解析 uid
+function getUidFromToken() {
+	const token = getToken()
+	if (!token) return null
+	try {
+		const payload = token.split('.')[1]
+		if (!payload) return null
+		const padded = payload + '='.repeat((4 - payload.length % 4) % 4)
+		const json = decodeURIComponent(escape(atob(padded)))
+		const data = JSON.parse(json)
+		return data.uid
+	} catch (e) {
+		return null
+	}
+}
+
 export function getSession() {
+	const uid = getUidFromToken()
+	// 特定用户部门写死
+	const overrideDept = uid != null ? DEPARTMENT_OVERRIDE[uid] : null
 	return {
 		userName: uni.getStorageSync(STORAGE_KEYS.userName) || '',
-		department: uni.getStorageSync(STORAGE_KEYS.department) || '',
-		avatarUrl: uni.getStorageSync(STORAGE_KEYS.avatarUrl) || ''
+		department: overrideDept || (uni.getStorageSync(STORAGE_KEYS.department) || ''),
+		avatarUrl: uni.getStorageSync(STORAGE_KEYS.avatarUrl) || '',
+		dingtalkUserIdPrefix: uni.getStorageSync(STORAGE_KEYS.dingtalkUserIdPrefix) || ''
 	}
 }
 
@@ -26,7 +53,7 @@ export function getToken() {
 	return uni.getStorageSync(STORAGE_KEYS.token) || ''
 }
 
-export function saveSession({ userName, department, token, avatarUrl }) {
+export function saveSession({ userName, department, token, avatarUrl, dingtalkUserIdPrefix }) {
 	if (typeof userName === 'string') {
 		uni.setStorageSync(STORAGE_KEYS.userName, userName)
 	}
@@ -39,6 +66,9 @@ export function saveSession({ userName, department, token, avatarUrl }) {
 	if (typeof avatarUrl === 'string') {
 		uni.setStorageSync(STORAGE_KEYS.avatarUrl, avatarUrl)
 	}
+	if (typeof dingtalkUserIdPrefix === 'string' && dingtalkUserIdPrefix) {
+		uni.setStorageSync(STORAGE_KEYS.dingtalkUserIdPrefix, dingtalkUserIdPrefix)
+	}
 }
 
 export function clearSession() {
@@ -46,6 +76,7 @@ export function clearSession() {
 	uni.removeStorageSync(STORAGE_KEYS.department)
 	uni.removeStorageSync(STORAGE_KEYS.token)
 	uni.removeStorageSync(STORAGE_KEYS.avatarUrl)
+	uni.removeStorageSync(STORAGE_KEYS.dingtalkUserIdPrefix)
 	uni.removeStorageSync(STORAGE_KEYS.nfcRescanRequiredAt)
 	uni.removeStorageSync(STORAGE_KEYS.pendingNfcTag)
 	LEGACY_KEYS.forEach((key) => {

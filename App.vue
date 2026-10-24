@@ -503,10 +503,10 @@ page {
 }
 
 .avatar-frame--nightrose .avatar-frame-overlay {
-	left: -52.5%;
-	top: -52.5%;
-	width: 205%;
-	height: 205%;
+	left: -40%;
+	top: -40%;
+	width: 180%;
+	height: 180%;
 }
 
 .avatar-frame--bluebow .avatar-frame-overlay {
@@ -552,6 +552,57 @@ page {
 @keyframes bunny-hand-right {
 	0%, 100% { transform: rotate(0deg); }
 	50% { transform: rotate(7deg); }
+}
+
+/* 专属头像框（王者/皇冠/恶魔）：PNG 覆盖层自带装饰，同云端框逻辑 */
+.avatar-shell.avatar-frame--king,
+.avatar.avatar-frame--king,
+.avatar-shell.avatar-frame--crown,
+.avatar.avatar-frame--crown,
+.avatar-shell.avatar-frame--demon,
+.avatar.avatar-frame--demon {
+	position: relative;
+	overflow: visible;
+	box-shadow: none;
+	background: transparent;
+	padding: 0;
+}
+
+.avatar-frame--king .avatar-image,
+.avatar-frame--king .avatar-fallback,
+.avatar-frame--king .avatar-fallback-cat,
+.avatar-frame--king .frame-preview-image,
+.avatar-frame--crown .avatar-image,
+.avatar-frame--crown .avatar-fallback,
+.avatar-frame--crown .avatar-fallback-cat,
+.avatar-frame--crown .frame-preview-image,
+.avatar-frame--demon .avatar-image,
+.avatar-frame--demon .avatar-fallback,
+.avatar-frame--demon .avatar-fallback-cat,
+.avatar-frame--demon .frame-preview-image {
+	border-radius: 50%;
+}
+
+/* 三个专属框的内孔直径不同，覆盖层按各自素材比例放大，使内孔对准头像圆 */
+.avatar-frame--king .avatar-frame-overlay {
+	left: -4%;
+	top: -18%;
+	width: 125%;
+	height: 125%;
+}
+
+.avatar-frame--crown .avatar-frame-overlay {
+	left: -27%;
+	top: -32%;
+	width: 155%;
+	height: 155%;
+}
+
+.avatar-frame--demon .avatar-frame-overlay {
+	left: -27%;
+	top: -37%;
+	width: 155%;
+	height: 155%;
 }
 
 /* ===================== 猫咪与特效共享动画 =====================

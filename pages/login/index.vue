@@ -53,6 +53,7 @@
 					<text class="switch-link">{{ isLoginMode ? '点击去注册' : '点击去登录' }}</text>
 				</view>
 
+				<!-- 钉钉登录待配置安装后启用 -->
 				<view v-if="isLoginMode" class="divider">
 					<view class="divider-line"></view>
 					<text class="divider-text">其他登录方式</text>
@@ -62,7 +63,7 @@
 					<text class="ding-badge">钉</text>
 					<text class="ding-text">钉钉一键登录</text>
 				</view>
-			</view>
+				</view>
 		</view>
 
 		<view class="safety">
@@ -78,6 +79,7 @@
 <script>
 	import { getSession, hasSession, saveSession } from '@/utils/session'
 	import { registerAccount, loginAccount, loginByDingTalk } from '@/api/auth'
+	import { getDingtalkUserIdPrefix } from '@/api/user'
 	import { DEPARTMENT_OPTIONS, DINGTALK_APP_KEY, DINGTALK_REDIRECT_URL } from '@/utils/config'
 	import { authLogin } from '@/uni_modules/open-dinglogin'
 
@@ -251,6 +253,7 @@
 						response: result
 					})
 					this.saveUserSession(result)
+					await this.fetchUserPrefix()
 					this.goCheckin()
 				} catch (error) {
 					console.error('[登录失败]', {
@@ -277,6 +280,17 @@
 					avatarUrl: user.avatarUrl || '',
 					token
 				})
+			},
+			// 拉取当前用户的钉钉 userid 前 6 位，用于专属头像框白名单判断
+			// 失败不阻断登录，仅控制台记录，专属框会对所有人隐藏
+			async fetchUserPrefix() {
+				try {
+					const prefix = await getDingtalkUserIdPrefix()
+					saveSession({ dingtalkUserIdPrefix: prefix })
+					console.log('[用户标识]', prefix)
+				} catch (error) {
+					console.warn('[获取用户标识失败，专属头像框将不可用]', error)
+				}
 			},
 			showRequestError(error) {
 				uni.showToast({
