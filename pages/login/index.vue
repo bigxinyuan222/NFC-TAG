@@ -54,16 +54,16 @@
 				</view>
 
 				<!-- 钉钉登录待配置安装后启用 -->
-			<view v-if="isLoginMode" class="divider">
-				<view class="divider-line"></view>
-				<text class="divider-text">其他登录方式</text>
-				<view class="divider-line"></view>
-			</view>
-			<view v-if="isLoginMode" class="ding-btn" @tap.stop="dingLogin">
-				<text class="ding-badge">钉</text>
-				<text class="ding-text">钉钉一键登录</text>
-			</view>
-			</view>
+				<view v-if="isLoginMode" class="divider">
+					<view class="divider-line"></view>
+					<text class="divider-text">其他登录方式</text>
+					<view class="divider-line"></view>
+				</view>
+				<view v-if="isLoginMode" class="ding-btn" @tap.stop="dingLogin">
+					<text class="ding-badge">钉</text>
+					<text class="ding-text">钉钉一键登录</text>
+				</view>
+				</view>
 		</view>
 
 		<view class="safety">
@@ -298,7 +298,6 @@
 					icon: 'none'
 				})
 			},
-			// 钉钉登录待配置安装后启用
 			async dingLogin() {
 				if (this.isSubmitting) return
 				uni.hideKeyboard()

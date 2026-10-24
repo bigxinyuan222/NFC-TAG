@@ -97,7 +97,8 @@
 	import { AVATAR_FRAMES, getAvatarFrame, getAvatarFrameId, setAvatarFrameId, getAvailableFrames } from '@/utils/avatar-frame'
 	import { getDisplayDepartment } from '@/utils/config'
 	import { getSkinClass } from '@/utils/skin'
-	import { getTotalAttendDays } from '@/utils/checkin-record'
+	import { normalizeRemoteCheckinRecords } from '@/utils/checkin-record'
+	import { getMyCheckins } from '@/api/checkin'
 	import catAssets from '@/utils/cat-assets'
 
 	export default {
@@ -212,7 +213,22 @@
 			selectFrame(frameId) {
 				const frame = this.avatarFrames.find((f) => f.id === frameId)
 				if (frame && frame.requiredDays) {
-					const attendDays = getTotalAttendDays(getSession())
+					this.checkFrameUnlock(frame)
+					return
+				}
+				this.applyFrame(frameId)
+			},
+			applyFrame(frameId) {
+				setAvatarFrameId(getSession(), frameId)
+				this.avatarFrameId = frameId
+				this.avatarFrameEntry = getAvatarFrame(getSession())
+				this.framePickerVisible = false
+			},
+			async checkFrameUnlock(frame) {
+				uni.showLoading({ title: '校验出勤天数...', mask: true })
+				try {
+					const attendDays = await this.fetchAttendDays(frame.requiredDays)
+					uni.hideLoading()
 					if (attendDays < frame.requiredDays) {
 						this.frameLockData = {
 							name: frame.name,
@@ -222,11 +238,26 @@
 						this.frameLockVisible = true
 						return
 					}
+					this.applyFrame(frame.id)
+				} catch (error) {
+					uni.hideLoading()
+					uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
 				}
-				setAvatarFrameId(getSession(), frameId)
-				this.avatarFrameId = frameId
-				this.avatarFrameEntry = getAvatarFrame(getSession())
-				this.framePickerVisible = false
+			},
+			async fetchAttendDays(targetDays) {
+				const daySet = new Set()
+				let page = 0
+				let hasMore = true
+				while (hasMore && daySet.size < targetDays) {
+					const result = await getMyCheckins({ page: page + 1, pageSize: 50 })
+					normalizeRemoteCheckinRecords(result.items, {
+						userName: this.userName,
+						department: this.department
+					}).forEach((record) => daySet.add(record.dateKey))
+					hasMore = result.items.length > 0 && (page + 1) * result.pageSize < result.total
+					page++
+				}
+				return daySet.size
 			},
 			closeFrameLockModal() {
 				this.frameLockVisible = false
