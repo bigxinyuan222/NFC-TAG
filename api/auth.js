@@ -72,7 +72,7 @@ export function changePassword({ oldPassword, newPassword }) {
 	return request(AUTH_PATHS.changePassword, { oldPassword, newPassword }, true)
 }
 
-// 钉钉授权登录：把 authCode 交给后端，后端换用户并返回与账号密码登录一致的 token+user
-export function loginByDingTalk(authCode) {
-	return request(AUTH_PATHS.dingLogin, { authCode })
+// 钉钉授权登录：把 authCode + state（含组织标识）交给后端，后端凭 state 区分组织并换用户
+export function loginByDingTalk(authCode, state) {
+	return request(AUTH_PATHS.dingLogin, { authCode, state })
 }

@@ -59,6 +59,22 @@
 					<text class="divider-text">其他登录方式</text>
 					<view class="divider-line"></view>
 				</view>
+				<view v-if="isLoginMode" class="field">
+					<text class="label">所属公司</text>
+					<picker
+						class="org-picker"
+						mode="selector"
+						:range="orgNames"
+						:value="orgIndex"
+						@change="handleOrgChange"
+					>
+						<view class="input-wrap picker-wrap">
+							<image class="input-icon" src="/static/icons/building.svg" mode="aspectFit" />
+							<text class="input org-value">{{ orgNames[orgIndex] }}</text>
+							<image class="picker-arrow" src="/static/icons/chevron-right.svg" mode="aspectFit" />
+						</view>
+					</picker>
+				</view>
 				<view v-if="isLoginMode" class="ding-btn" @tap.stop="dingLogin">
 					<text class="ding-badge">钉</text>
 					<text class="ding-text">钉钉一键登录</text>
@@ -80,7 +96,7 @@
 	import { getSession, hasSession, saveSession } from '@/utils/session'
 	import { registerAccount, loginAccount, loginByDingTalk } from '@/api/auth'
 	import { getDingtalkUserIdPrefix } from '@/api/user'
-	import { DEPARTMENT_OPTIONS, DINGTALK_APP_KEY, DINGTALK_REDIRECT_URL } from '@/utils/config'
+	import { DEPARTMENT_OPTIONS, DINGTALK_ORGS, DINGTALK_REDIRECT_URL } from '@/utils/config'
 	import { authLogin } from '@/uni_modules/open-dinglogin'
 
 	export default {
@@ -94,6 +110,8 @@
 				},
 				departmentOptions: DEPARTMENT_OPTIONS,
 				departmentIndex: 0,
+				orgNames: DINGTALK_ORGS.map((org) => org.name),
+				orgIndex: 0,
 				isLoginMode: true,
 				isSubmitting: false
 			}
@@ -132,6 +150,9 @@
 				const index = Number(event.detail.value)
 				this.departmentIndex = index
 				this.form.department = this.departmentOptions[index] || ''
+			},
+			handleOrgChange(event) {
+				this.orgIndex = Number(event.detail.value)
 			},
 			goCheckin() {
 				uni.reLaunch({
@@ -301,16 +322,21 @@
 			async dingLogin() {
 				if (this.isSubmitting) return
 				uni.hideKeyboard()
+				const org = DINGTALK_ORGS[this.orgIndex]
+				if (!org || !org.clientId) {
+					uni.showToast({ title: '请先选择所属公司', icon: 'none' })
+					return
+				}
 				this.isSubmitting = true
 				uni.showLoading({ title: '正在唤起钉钉...', mask: true })
 				try {
 					const auth = await authLogin({
-						appId: DINGTALK_APP_KEY,
+						appId: org.clientId,
 						redirectUrl: DINGTALK_REDIRECT_URL,
 						responseType: 'code',
 						scope: 'openid',
 						prompt: 'consent',
-						state: Date.now() + ''
+						state: org.key
 					})
 					if (!auth.authCode) {
 						uni.hideLoading()
@@ -318,7 +344,7 @@
 						return
 					}
 					uni.showLoading({ title: '正在登录...', mask: true })
-					const result = await loginByDingTalk(auth.authCode)
+					const result = await loginByDingTalk(auth.authCode, auth.state)
 					uni.hideLoading()
 					this.saveUserSession(result)
 					uni.showToast({ title: '登录成功', icon: 'success' })
@@ -434,6 +460,16 @@
 	.department-picker {
 		display: block;
 		width: 100%;
+	}
+
+	.org-picker {
+		display: block;
+		width: 100%;
+	}
+
+	.org-value {
+		display: flex;
+		align-items: center;
 	}
 
 	.picker-wrap {
