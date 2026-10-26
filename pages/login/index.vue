@@ -53,7 +53,8 @@
 					<text class="switch-link">{{ isLoginMode ? '点击去注册' : '点击去登录' }}</text>
 				</view>
 
-				<!-- 钉钉登录待配置安装后启用 -->
+				<!-- 钉钉登录：UTS 插件仅支持 App（Android/iOS），小程序端不编译 -->
+				<!-- #ifdef APP-PLUS -->
 				<view v-if="isLoginMode" class="divider">
 					<view class="divider-line"></view>
 					<text class="divider-text">其他登录方式</text>
@@ -63,6 +64,7 @@
 					<text class="ding-badge">钉</text>
 					<text class="ding-text">钉钉一键登录</text>
 				</view>
+				<!-- #endif -->
 				</view>
 		</view>
 
@@ -81,7 +83,9 @@
 	import { registerAccount, loginAccount, loginByDingTalk } from '@/api/auth'
 	import { getDingtalkUserIdPrefix } from '@/api/user'
 	import { DEPARTMENT_OPTIONS, DINGTALK_APP_KEY, DINGTALK_REDIRECT_URL } from '@/utils/config'
+	// #ifdef APP-PLUS
 	import { authLogin } from '@/uni_modules/open-dinglogin'
+	// #endif
 
 	export default {
 		data() {
@@ -299,6 +303,11 @@
 				})
 			},
 			async dingLogin() {
+				// #ifndef APP-PLUS
+				uni.showToast({ title: '钉钉授权登录仅在 App 端可用', icon: 'none' })
+				return
+				// #endif
+				// #ifdef APP-PLUS
 				if (this.isSubmitting) return
 				uni.hideKeyboard()
 				this.isSubmitting = true
@@ -330,6 +339,7 @@
 				} finally {
 					this.isSubmitting = false
 				}
+				// #endif
 			}
 		}
 	}

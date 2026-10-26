@@ -10,6 +10,8 @@ export const AVATAR_FRAMES = [
 	{ id: 'nightrose', name: '夜玫', className: 'avatar-frame--nightrose', overlay: '/static/frames/frame-nightrose.png', requiredDays: 3 },
 	{ id: 'bluebow', name: '蓝蝶', className: 'avatar-frame--bluebow', overlay: '/static/frames/frame-bluebow.png', requiredDays: 3 },
 	{ id: 'bunnyred', name: '兔红', className: 'avatar-frame--bunnyred', overlay: '/static/frames/frame-bunnyred.png', handLeft: '/static/frames/frame-bunnyred-hand-l.png', handRight: '/static/frames/frame-bunnyred-hand-r.png', requiredDays: 5 },
+	// 指定姓名才能用的头像框：列表里所有人可见，选择时校验姓名，不匹配弹窗拦截
+	{ id: 'momtalk', name: '唠叨', className: 'avatar-frame--momtalk', overlay: '/static/frames/frame-momtalk.png', allowedUserNames: ['刘子怡'] },
 	// 专属头像框：仅 allowedPrefixes 命中的用户可见
 	{ id: 'king', name: '王者专属', className: 'avatar-frame--king', overlay: '/static/frames/hao.png', allowedPrefixes: ['200465'] },
 	{ id: 'crown', name: '皇冠专属', className: 'avatar-frame--crown', overlay: '/static/frames/pei.png', allowedPrefixes: ['036058'] },
@@ -42,6 +44,18 @@ export function getAvailableFrames(session) {
 	return AVATAR_FRAMES.filter((frame) => isFrameVisible(frame, session))
 }
 
+/**
+ * 指定姓名的头像框：当前用户姓名不在 allowedUserNames 内则不可用
+ * 这类框在列表里对所有人可见，只是选择时会弹窗拦截
+ */
+export function isFrameOwnerDenied(frame, session) {
+	if (!frame || !frame.allowedUserNames || !frame.allowedUserNames.length) {
+		return false
+	}
+	const userName = session && session.userName ? String(session.userName).trim() : ''
+	return frame.allowedUserNames.indexOf(userName) === -1
+}
+
 function getStorageKey(session) {
 	const userName = session && session.userName ? session.userName : ''
 	const department = session && session.department ? session.department : ''
@@ -50,13 +64,16 @@ function getStorageKey(session) {
 
 /**
  * 获取当前用户已选择的头像框 ID
- * 若已选的框对当前用户不再可见（被移出白名单），降级为 default
+ * 若已选的框对当前用户不再可见（被移出白名单）或姓名不匹配，降级为 default
  */
 export function getAvatarFrameId(session) {
 	const frameId = uni.getStorageSync(getStorageKey(session))
 	const availableIds = getAvailableFrames(session).map((f) => f.id)
 	if (availableIds.indexOf(frameId) !== -1) {
-		return frameId
+		const frame = AVATAR_FRAMES.find((f) => f.id === frameId)
+		if (!isFrameOwnerDenied(frame, session)) {
+			return frameId
+		}
 	}
 	return 'default'
 }
