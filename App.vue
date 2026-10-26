@@ -467,7 +467,9 @@ page {
 .avatar-shell.avatar-frame--bluebow,
 .avatar.avatar-frame--bluebow,
 .avatar-shell.avatar-frame--bunnyred,
-.avatar.avatar-frame--bunnyred {
+.avatar.avatar-frame--bunnyred,
+.avatar-shell.avatar-frame--momtalk,
+.avatar.avatar-frame--momtalk {
 	position: relative;
 	overflow: visible;
 	box-shadow: none;
@@ -490,7 +492,11 @@ page {
 .avatar-frame--bunnyred .avatar-image,
 .avatar-frame--bunnyred .avatar-fallback,
 .avatar-frame--bunnyred .avatar-fallback-cat,
-.avatar-frame--bunnyred .frame-preview-image {
+.avatar-frame--bunnyred .frame-preview-image,
+.avatar-frame--momtalk .avatar-image,
+.avatar-frame--momtalk .avatar-fallback,
+.avatar-frame--momtalk .avatar-fallback-cat,
+.avatar-frame--momtalk .frame-preview-image {
 	border-radius: 50%;
 }
 
@@ -552,6 +558,22 @@ page {
 @keyframes bunny-hand-right {
 	0%, 100% { transform: rotate(0deg); }
 	50% { transform: rotate(7deg); }
+}
+
+/* 唠叨：气泡挂件挂在头像上方。素材为 448 画布，头像圆直径 280、圆顶 y=126，
+   故覆盖层取 160% 并将顶部上提 45%，使气泡底边正好贴住头像圆顶 */
+.avatar-frame--momtalk .avatar-frame-overlay {
+	left: -30%;
+	top: -45%;
+	width: 160%;
+	height: 160%;
+	/* 气泡挂件做极小幅度的上下浮动，像被挂在头像上方轻轻晃 */
+	animation: momtalk-float 3s ease-in-out infinite;
+}
+
+@keyframes momtalk-float {
+	0%, 100% { transform: translateY(0); }
+	50% { transform: translateY(-2.5%); }
 }
 
 /* 专属头像框（王者/皇冠/恶魔）：PNG 覆盖层自带装饰，同云端框逻辑 */
@@ -644,7 +666,8 @@ page {
 	.result-success-cat,
 	.result-sparkle,
 	.cheer-banner-cat,
-	.avatar-frame-hand {
+	.avatar-frame-hand,
+	.avatar-frame--momtalk .avatar-frame-overlay {
 		animation: none !important;
 	}
 }
