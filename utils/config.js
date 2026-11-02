@@ -1,21 +1,37 @@
 export const BASE_URL = 'http://43.143.211.94:8080'
 
-// 钉钉开放平台移动应用：Client ID（旧 AppKey）
+// 钉钉开放平台移动应用：默认 Client ID（旧 AppKey），对应乐知院，见 DINGTALK_ORGS
 export const DINGTALK_APP_KEY = 'dingap2ebzsizxigniub'
 // 钉钉授权回调地址，需与钉钉后台「重定向 URL」一致；原生插件会拦截，不要求该地址真实可访问
 export const DINGTALK_REDIRECT_URL = 'https://bigxinyuan222.github.io/urban-pancake/tz.html'
+
+// 钉钉组织映射：前端只放各组织的 Client ID（公开），Client Secret 严禁出现在前端
+export const DINGTALK_ORGS = [
+	{
+		key: 'org_lezhidata',
+		clientId: 'dingnf45wlswl9y157ui', // 河南乐知数字科技有限公司
+		name: '河南乐知数字科技有限公司'
+	},
+	{
+		key: 'org_lezhiedu',
+		clientId: DINGTALK_APP_KEY, // 河南乐知院教育科技有限公司（沿用原有 appId）
+		name: '河南乐知院教育科技有限公司'
+	}
+]
 
 // 与 manifest.json 的 versionName 保持一致
 export const APP_VERSION = '1.0.0'
 
 // 部门可选列表：唯一数据源，注册页选择与各页展示共用
-export const DEPARTMENT_OPTIONS = ['27鹰飞', '26鹰飞', '全栈二期']
+export const DEPARTMENT_OPTIONS = ['27鹰飞', '26鹰飞', '全栈二期', 'ROS机器人', '307智能创新小组']
 
 // 后端返回的原始钉钉部门ID → 部门名称映射（登录拿到原始值时的前端翻译）
 export const DEPARTMENT_ID_MAP = {
 	'1035675564': '27鹰飞',
 	'1089151080': '全栈二期',
-	'1038350589': '26鹰飞'
+	'1038350589': '26鹰飞',
+	'1084428520': 'ROS机器人',
+	'1092925535': '307智能创新小组'
 }
 
 export function isValidDepartment(name) {
