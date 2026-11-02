@@ -467,6 +467,11 @@
 		margin-right: 10rpx;
 	}
 
+	/* 唠叨的气泡挂在头像上方，稍微下移给顶部状态栏留出空间 */
+	.hero-row .avatar.avatar-frame--momtalk {
+		margin-top: 24rpx;
+	}
+
 	.avatar-image,
 	.avatar-fallback {
 		width: 100%;

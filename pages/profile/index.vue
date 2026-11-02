@@ -79,8 +79,8 @@
 					<image src="/static/icons/lock.svg" mode="aspectFit" />
 				</view>
 				<text class="frame-lock-title">{{ frameLockData.name }}</text>
-				<text class="frame-lock-message">该头像框需出勤满 {{ frameLockData.requiredDays }} 天解锁</text>
-				<text class="frame-lock-remain">你还差 {{ frameLockData.remainDays }} 天</text>
+				<text class="frame-lock-message">{{ frameLockData.message }}</text>
+				<text v-if="frameLockData.remainText" class="frame-lock-remain">{{ frameLockData.remainText }}</text>
 				<view class="frame-lock-btn" @tap="closeFrameLockModal">
 					<text class="frame-lock-btn-text">我知道了</text>
 				</view>
@@ -94,7 +94,7 @@
 <script>
 	import AppTabbar from '@/components/app-tabbar/index.vue'
 	import { clearSession, getSession } from '@/utils/session'
-	import { AVATAR_FRAMES, getAvatarFrame, getAvatarFrameId, setAvatarFrameId, getAvailableFrames } from '@/utils/avatar-frame'
+	import { AVATAR_FRAMES, getAvatarFrame, getAvatarFrameId, setAvatarFrameId, getAvailableFrames, isFrameOwnerDenied } from '@/utils/avatar-frame'
 	import { getDisplayDepartment } from '@/utils/config'
 	import { getSkinClass } from '@/utils/skin'
 	import { normalizeRemoteCheckinRecords } from '@/utils/checkin-record'
@@ -118,7 +118,7 @@
 				framePickerVisible: false,
 				showLogoutModal: false,
 				frameLockVisible: false,
-				frameLockData: { name: '', requiredDays: 0, remainDays: 0 },
+				frameLockData: { name: '', message: '', remainText: '' },
 				skinClass: 'skin-sunny',
 				menuItems: [
 					{ key: 'profile', label: '个人信息', icon: '/static/icons/menu-user.svg', tint: 'rgba(245, 154, 35, 0.14)' },
@@ -212,6 +212,16 @@
 			},
 			selectFrame(frameId) {
 				const frame = this.avatarFrames.find((f) => f.id === frameId)
+				// 指定姓名的头像框：姓名不匹配直接弹窗拦截
+				if (isFrameOwnerDenied(frame, getSession())) {
+					this.frameLockData = {
+						name: frame.name,
+						message: `只有${frame.allowedUserNames.join('、')}才能使用这个头像框`,
+						remainText: ''
+					}
+					this.frameLockVisible = true
+					return
+				}
 				if (frame && frame.requiredDays) {
 					this.checkFrameUnlock(frame)
 					return
@@ -232,8 +242,8 @@
 					if (attendDays < frame.requiredDays) {
 						this.frameLockData = {
 							name: frame.name,
-							requiredDays: frame.requiredDays,
-							remainDays: frame.requiredDays - attendDays
+							message: `该头像框需出勤满 ${frame.requiredDays} 天解锁`,
+							remainText: `你还差 ${frame.requiredDays - attendDays} 天`
 						}
 						this.frameLockVisible = true
 						return
@@ -485,7 +495,9 @@
 	}
 
 	.frame-options {
-		margin-top: 36rpx;
+		/* 顶部留白给「唠叨」气泡挂件探出 scroll-view 的空间，避免被裁切 */
+		margin-top: 0;
+		padding-top: 40rpx;
 		white-space: nowrap;
 	}
 
@@ -542,6 +554,14 @@
 		top: -14%;
 		width: 128%;
 		height: 128%;
+	}
+
+	/* 唠叨是挂在头像上方的气泡，面板内与主界面一致按 160% 还原（头像 1:1） */
+	.frame-preview.avatar-frame--momtalk .avatar-frame-overlay {
+		left: -30%;
+		top: -45%;
+		width: 160%;
+		height: 160%;
 	}
 
 	/* 三个专属框内孔比例不同，预览时各自缩放使头像大小一致 */
