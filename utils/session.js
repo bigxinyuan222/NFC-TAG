@@ -5,7 +5,8 @@ const STORAGE_KEYS = {
 	avatarUrl: 'avatarUrl',
 	dingtalkUserIdPrefix: 'dingtalkUserIdPrefix',
 	nfcRescanRequiredAt: 'nfcRescanRequiredAt',
-	pendingNfcTag: 'pendingNfcTag'
+	pendingNfcTag: 'pendingNfcTag',
+	pendingCheckinResult: 'pendingCheckinResult'
 }
 
 const LEGACY_KEYS = ['userId']
@@ -79,6 +80,7 @@ export function clearSession() {
 	uni.removeStorageSync(STORAGE_KEYS.dingtalkUserIdPrefix)
 	uni.removeStorageSync(STORAGE_KEYS.nfcRescanRequiredAt)
 	uni.removeStorageSync(STORAGE_KEYS.pendingNfcTag)
+	uni.removeStorageSync(STORAGE_KEYS.pendingCheckinResult)
 	LEGACY_KEYS.forEach((key) => {
 		uni.removeStorageSync(key)
 	})
@@ -107,4 +109,23 @@ export function consumePendingNfcTag() {
 	if (!tag || typeof tag !== 'object') return null
 	if (!tag.uid || Date.now() - Number(tag.scannedAt) > 30 * 1000) return null
 	return tag
+}
+
+// 冷启动时上传可能早于页面就绪；只传递结果，页面不再重复提交。
+export function setPendingCheckinResult(result) {
+	uni.setStorageSync(STORAGE_KEYS.pendingCheckinResult, {
+		success: result.success === true,
+		message: result.message || '',
+		time: result.time || Date.now(),
+		queuedAt: Date.now()
+	})
+}
+
+export function consumePendingCheckinResult() {
+	const result = uni.getStorageSync(STORAGE_KEYS.pendingCheckinResult)
+	uni.removeStorageSync(STORAGE_KEYS.pendingCheckinResult)
+	if (!result || typeof result !== 'object') return null
+	const age = Date.now() - Number(result.queuedAt)
+	if (!Number.isFinite(age) || age < 0 || age > 60 * 1000) return null
+	return result
 }

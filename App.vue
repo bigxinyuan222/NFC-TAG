@@ -1,6 +1,6 @@
 <script>
-	import { clearSession, hasSession, requireNfcRescan, setPendingNfcTag } from './utils/session'
-	import { acquireNfcSubmissionLock, readTagFromCurrentIntent, releaseNfcSubmissionLock, startNfcScan, stopNfcScan } from './utils/nfc-checkin'
+	import { clearSession, hasSession, requireNfcRescan, setPendingCheckinResult, setPendingNfcTag } from './utils/session'
+	import { acquireNfcSubmissionLock, listenForNfcIntents, releaseNfcSubmissionLock, startNfcScan, stopNfcScan } from './utils/nfc-checkin'
 	import { submitCheckin } from './api/checkin'
 	import { getCheckinWindowStatus } from './utils/checkin-record'
 	import { NFC_CHECKIN_POINT_ID } from './utils/nfc-config'
@@ -13,27 +13,17 @@
 	export default {
 		onLaunch() {
 			// #ifdef APP-PLUS
-			// 冷启动时检查 Intent 是否携带 NFC TAG
-			const uidFromLaunch = readTagFromCurrentIntent()
-			if (uidFromLaunch) {
-				this.handleBackgroundNfc(uidFromLaunch)
-				return
-			}
-
-			this.handle(plus.runtime.arguments)
-			document.addEventListener('newintent', () => {
-				// 后台拉起时同样检查 NFC TAG
-				const uid = readTagFromCurrentIntent()
-				if (uid) {
-					this.handleBackgroundNfc(uid)
+			listenForNfcIntents((tag) => {
+				if (tag.background) {
+					this.handleBackgroundNfc(tag.uid)
 				} else {
-					this.handle(plus.runtime.arguments)
+					this.handleNfcTag(tag)
 				}
-			})
+			}, () => this.handle(plus.runtime.arguments))
 			// #endif
 		},
 		onShow() {
-			const state = startNfcScan((tag) => this.handleNfcTag(tag))
+			const state = startNfcScan()
 			if (state && state.error) console.warn('[NFC 不可用]', state.error)
 		},
 		onHide() {
@@ -89,10 +79,11 @@
 					return
 				}
 
+				const checkinTime = Date.now()
 				try {
 					const windowStatus = getCheckinWindowStatus()
 					if (!windowStatus.allowed) {
-						this.showLocalNotification('打卡失败', '不在打卡时间范围内')
+						this.showCheckinFeedback(false, '不在打卡时间范围内', checkinTime)
 						return
 					}
 					const result = await submitCheckin({
@@ -100,13 +91,13 @@
 						uid: uid
 					})
 					const message = result.success ? (result.message || '打卡成功') : (result.message || '打卡失败')
-					this.showLocalNotification(result.success ? '打卡成功' : '打卡失败', message)
 					if (result.success) {
 						this.saveLocalRecord(uid)
 					}
+					this.showCheckinFeedback(result.success, message, checkinTime)
 				} catch (error) {
 					const message = error && (error.message || error.errMsg) ? (error.message || error.errMsg) : '网络请求失败'
-					this.showLocalNotification('打卡失败', message)
+					this.showCheckinFeedback(false, message, checkinTime)
 				} finally {
 					releaseNfcSubmissionLock()
 				}
@@ -139,17 +130,18 @@
 				}
 			},
 
-			showLocalNotification(title, content) {
-				// #ifdef APP-PLUS
-				try {
-					plus.push.createMessage(content, 'checkin-background', {
-						title: title,
-						when: new Date()
-					})
-				} catch (e) {
-					console.error('[后台打卡] 通知失败', e)
+			showCheckinFeedback(success, message, time) {
+				// 页面就绪后消费一次结果，复用前台的动画弹窗，不再次上传卡号。
+				setPendingCheckinResult({ success, message, time })
+				const pages = getCurrentPages()
+				const current = pages[pages.length - 1]
+				if (current && current.route === 'pages/checkin/index') {
+					uni.$emit('checkin-result-ready')
+					return
 				}
-				// #endif
+				uni.reLaunch({
+					url: '/pages/checkin/index'
+				})
 			},
 
 			handle(url) {

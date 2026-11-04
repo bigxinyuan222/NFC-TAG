@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+	package="uni.app.UNI35FA817">
+	<application>
+		<!-- 使用正常启动入口完成运行时初始化，并将原 NFC Intent 转交给运行页。
+		     内部 PandoraEntryActivity 在云打包后不对外导出，不能直接作为 NFC 入口。 -->
+		<activity android:name="io.dcloud.PandoraEntry" android:exported="true">
+			<!-- NFC Tools 的“启动应用”写入 android.com:pkg 类型的 AAR 记录。
+			     必须匹配其 NDEF URI，否则系统只按包名启动桌面入口，不传入 Tag。 -->
+			<intent-filter>
+				<action android:name="android.nfc.action.NDEF_DISCOVERED" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:scheme="vnd.android.nfc" android:host="ext"
+					android:path="/android.com:pkg" />
+			</intent-filter>
+			<intent-filter>
+				<action android:name="android.nfc.action.NDEF_DISCOVERED" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:scheme="mycheckin" />
+			</intent-filter>
+			<!-- 未写入 NDEF 链接的卡片使用系统 NFC 的最后一级分发。 -->
+			<intent-filter>
+				<action android:name="android.nfc.action.TAG_DISCOVERED" />
+				<category android:name="android.intent.category.DEFAULT" />
+			</intent-filter>
+		</activity>
+	</application>
+</manifest>

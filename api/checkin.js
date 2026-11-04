@@ -1,6 +1,7 @@
 import { BASE_URL } from '@/utils/config'
 import { getToken } from '@/utils/session'
 import { getDeviceId } from '@/utils/device'
+import { logCheckinDiagnostic } from '@/utils/checkin-diagnostics'
 
 export function getMyCheckins({ page = 1, pageSize = 20 } = {}) {
 	const token = getToken()
@@ -39,6 +40,12 @@ export function getMyCheckins({ page = 1, pageSize = 20 } = {}) {
 					return
 				}
 
+				const latest = body.data.items[0]
+				logCheckinDiagnostic('[远端打卡流水]', {
+					page,
+					total: Number(body.data.total) || 0,
+					latest: latest ? { id: latest.id, pointId: latest.pointId, createdAt: latest.createdAt } : null
+				})
 				resolve({
 					items: body.data.items,
 					page: Number(body.data.page) || page,
@@ -82,6 +89,14 @@ export function submitCheckin({ pointId, uid }) {
 			success: (response) => {
 				const body = response.data && typeof response.data === 'object' ? response.data : {}
 				const success = response.statusCode === 200 && body.code === 0
+				logCheckinDiagnostic('[NFC 打卡上传结果]', {
+					uid,
+					pointId,
+					statusCode: response.statusCode,
+					code: body.code,
+					success,
+					dingtalkSync: body.data && body.data.dingtalkSync
+				})
 				resolve({
 					success,
 					message: success ? (body.msg || '打卡成功') : (body.msg || '打卡失败'),
