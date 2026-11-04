@@ -2,8 +2,8 @@
     "name" : "喵呜打卡",
     "appid" : "__UNI__35FA817",
     "description" : "",
-    "versionName" : "1.4.0",
-    "versionCode" : "100",
+    "versionName" : "1.4.5",
+    "versionCode" : "105",
     "transformPx" : false,
     "app-plus" : {
         "usingComponents" : true,

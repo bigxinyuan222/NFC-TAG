@@ -20,7 +20,7 @@ export const DINGTALK_ORGS = [
 ]
 
 // 与 manifest.json 的 versionName 保持一致
-export const APP_VERSION = '1.0.0'
+export const APP_VERSION = '1.4.5'
 
 // 部门可选列表：唯一数据源，注册页选择与各页展示共用
 export const DEPARTMENT_OPTIONS = ['27鹰飞', '26鹰飞', '全栈二期', 'ROS机器人', '307智能创新小组']

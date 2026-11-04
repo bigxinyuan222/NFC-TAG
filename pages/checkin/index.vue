@@ -82,7 +82,7 @@
 <script>
 	import AppTabbar from '@/components/app-tabbar/index.vue'
 	import CheckinResult from '@/components/checkin-result/index.vue'
-	import { clearSession, consumeNfcRescanRequired, consumePendingNfcTag, getSession, hasSession } from '@/utils/session'
+	import { clearSession, consumeNfcRescanRequired, consumePendingCheckinResult, consumePendingNfcTag, getSession, hasSession } from '@/utils/session'
 	import { getCheckinWindowStatus, getTodayCheckinSummary, normalizeRemoteCheckinRecords, saveCheckinRecord } from '@/utils/checkin-record'
 	import { getMyCheckins, submitCheckin as submitCheckinRequest } from '@/api/checkin'
 	import { NFC_CHECKIN_POINT_ID } from '@/utils/nfc-config'
@@ -160,6 +160,8 @@
 			this.refreshTodaySummary()
 			this.startClock()
 			this.requiresNfcRescan = consumeNfcRescanRequired()
+			uni.$on('checkin-result-ready', this.showPendingCheckinResult)
+			this.showPendingCheckinResult()
 			const pendingNfcTag = consumePendingNfcTag()
 			if (pendingNfcTag) this.handleNfcTag(pendingNfcTag)
 			if (this.requiresNfcRescan) {
@@ -180,13 +182,26 @@
 			this.pageVisible = false
 			this.stopClock()
 			uni.$off('checkin-window-denied', this.handleCheckinDenied)
+			uni.$off('checkin-result-ready', this.showPendingCheckinResult)
 		},
 		onUnload() {
 			this.pageVisible = false
 			this.stopClock()
 			uni.$off('checkin-window-denied', this.handleCheckinDenied)
+			uni.$off('checkin-result-ready', this.showPendingCheckinResult)
 		},
 		methods: {
+			showPendingCheckinResult() {
+				const pendingResult = consumePendingCheckinResult()
+				if (!pendingResult) return
+				this.result = {
+					success: pendingResult.success,
+					message: pendingResult.message,
+					pointId: '',
+					timeText: formatClockTime(new Date(pendingResult.time))
+				}
+				this.resultVisible = true
+			},
 			goLogin() {
 				uni.reLaunch({
 					url: '/pages/login/index'

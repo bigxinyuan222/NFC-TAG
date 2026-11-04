@@ -65,6 +65,10 @@ static/      图片和图标资源
 
 如果只处理其中一种，就会出现「能碰卡打开 APP，但读不到 UID」或者「前台碰卡没反应」的问题。最终实现里两种场景都做了处理。
 
+根目录 `AndroidManifest.xml` 为正常启动入口 `io.dcloud.PandoraEntry` 注册了包名启动记录（AAR）和 `mycheckin` 协议的 `NDEF_DISCOVERED`，以及 `TAG_DISCOVERED` 兜底入口。该入口先加载应用配置，再把原来的 NFC Intent 转交给内部的 `PandoraEntryActivity`，由 JS 读取卡片数据。不能直接把 NFC 入口挂在内部运行页上：现场手机安装的 `1.4.1` 中，该页面打包后仍未对外导出，ADB 启动同一 NDEF 请求报 `Permission Denial: ... not exported`，而经 `PandoraEntry` 启动返回 `Status: ok`。正常入口同时保证运行时初始化。仅在 `manifest.json` 注册 URL scheme，只能保证链接能打开 APP，不能保证首次碰卡的 Tag 数据传入。原生清单有改动时，需要重新云打包或制作自定义调试基座，热更新不会更新这部分配置。
+
+NFC Tools 的“启动应用”写入的是 External 类型 `android.com:pkg`，payload 为包名（例如 `uni.app.UNI35FA817`），并不是 `mycheckin://` 链接。Android 将这种记录映射为 `vnd.android.nfc://ext/android.com:pkg`。必须用单独的 NDEF filter 匹配该 URI；缺少匹配时，系统可能按包名退回桌面启动入口，应用能打开却收不到本次卡片 Tag/UID。卡片无需重写，包名也不应替代硬件 UID。
+
 ### 通过 plus.android 桥接拿到原生能力
 
 uni-app 在 APP 端可以通过 `plus.android.importClass` 直接调用 Android 原生类，不需要写原生工程。获取 NFC 适配器的过程：
@@ -81,17 +85,16 @@ if (!adapter.isEnabled()) return { error: '请先在系统设置中开启 NFC' }
 
 ### 从 intent 中取出 Tag 并解析 UID
 
-系统把卡片信息放在 intent 的 `EXTRA_TAG` 里，先判断 action 是否属于 NFC 三类事件之一，再取 Tag：
+优先从 intent 的 `EXTRA_ID` 直接读取 UID；没有时再从 `EXTRA_TAG` 读取。部分启动流程会包装 action，因此以原生 NFC extra 为准：
 
 ```javascript
-const action = intent.getAction()
-const isNfcIntent = action === NfcAdapter.ACTION_TAG_DISCOVERED
-    || action === NfcAdapter.ACTION_TECH_DISCOVERED
-    || action === NfcAdapter.ACTION_NDEF_DISCOVERED
-if (!isNfcIntent) return null
-
-const tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
-const bytes = tag.getId()
+let bytes = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID)
+if (!bytes || !bytes.length) {
+    const tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+    if (!tag) return null
+    plus.android.importClass(tag)
+    bytes = tag.getId()
+}
 ```
 
 `tag.getId()` 返回的是卡片出厂 UID 的**字节数组**，不是现成字符串，需要逐字节转成十六进制。完整转换过程：
@@ -114,14 +117,14 @@ return uid.toUpperCase()
 
 ### 前台调度与防重复
 
-前台碰卡需要主动注册 `enableForegroundDispatch`，让系统优先把 NFC 事件交给当前页面：
+应用启动时用 `listenForNfcIntents` 注册唯一的 `plus.globalEvent` 监听，前台碰卡再开启 `enableForegroundDispatch`，让系统优先把 NFC 事件交给当前页面。uni-app 的逻辑层没有 `document`，不能在 `App.vue` 中用 `document.addEventListener` 注册：
 
 ```javascript
+plus.globalEvent.addEventListener('newintent', handleNewIntent)
 let flags = PendingIntent.FLAG_UPDATE_CURRENT
 if (Build.VERSION.SDK_INT >= 31) flags |= PendingIntent.FLAG_MUTABLE
 pendingIntent = PendingIntent.getActivity(activity, 0, intent, flags)
 adapter.enableForegroundDispatch(activity, pendingIntent, null, null)
-plus.globalEvent.addEventListener('newintent', handleNewIntent)
 ```
 
 注意 Android 12（API 31）及以上强制要求 PendingIntent 显式声明可变性，必须加上 `FLAG_MUTABLE`，否则在新系统上会直接抛异常。
@@ -131,7 +134,32 @@ plus.globalEvent.addEventListener('newintent', handleNewIntent)
 - 1 秒内相同 UID 的扫描结果去重（防抖）。
 - 提交打卡时加 30 秒超时的全局锁，防止同一次碰卡产生重复打卡。
 
-读完一次后用一个空 Intent 调 `setIntent` 清掉当前 intent，避免同一张卡被重复解析。
+启动或 `newintent` 暂时读不到卡片时，每隔 100ms 重试，最多重试 5 次。成功解析后才清除 NFC extra，保留原有链接及其他启动参数，避免提前消费首次碰卡数据。后台只关闭前台调度，保留监听以接收下一次碰卡唤起。如果系统最终只传入普通链接、没有原生卡片数据，仍需提示再次碰卡，不能把链接里的字符串当作卡片 UID。
+
+本地回归测试（Node.js 20+）：
+
+```sh
+node --test tests/nfc-checkin.test.cjs tests/checkin-window.test.cjs
+powershell -NoProfile -File tests/check-nfc-manifest.ps1
+```
+
+真机验证时，先登录并关闭 APP，再碰一次已有 NFC 卡片，检查是否直接打卡成功；随后验证后台唤起、前台碰卡和快速连续碰卡。必须安装包含新 `AndroidManifest.xml` 的完整 APK 或自定义基座。
+
+启动入口修复从 `1.4.2`（`versionCode: 102`）开始提供。使用相同包名和签名重新云打包、覆盖安装后，先确认应用显示的版本；拿已有的包名启动卡片碰一次，预期打开应用并在允许的时间段内自动打卡。`tests/fixtures/nfc-package-record.json` 复现了现场 36 字节的单条包名记录，清单检查验证这条记录能匹配正常启动入口，并拒绝直接打开内部运行页的错误配置；JS 回归验证收到该 Intent 后提交硬件 UID，不弹出调试卡号窗口。模拟检查不代替真机验收。
+
+手机连接 ADB 后，可运行 `powershell -File tests/check-nfc-device.ps1 -AdbPath <adb.exe路径> -Serial <设备序列号>`，检查已安装 APK 的三类 NFC 入口是否均指向 `exported=true` 的 `PandoraEntry`，以及版本是否与源码一致。此检查只查询配置；真实碰卡与流水上传仍需现场验收。
+
+`1.4.3`（`versionCode: 103`）曾用于实机数据验证，临时允许任意时间碰卡提交并显示 UID 调试弹窗。测试已确认首次碰卡读取 UID 与服务器流水上传成功。
+
+`1.4.4`（`versionCode: 104`）移除 UID 调试弹窗，并将 `utils/checkin-record.js` 的 `CHECKIN_TIME_LIMIT_ENABLED` 恢复为 `true`：仅允许在每个既定打卡时间点前 30 分钟至该时间点（含边界）内提交，其余时间拒绝。时间窗回归覆盖全部既定时点的开闭边界，以及实机测试使用的非打卡时段。
+
+`1.4.5`（`versionCode: 105`）恢复冷启动和后台碰卡后的猫咪动态结果弹窗，与前台打卡保持一致。成功时展示猫咪弹出、星光、确认勾、本次打卡时间与一次轻触感，点击按钮即可收起；失败则显示实际原因，不播放成功反馈。后台先提交并保存结果，再交给打卡页消费一次：当前已在打卡页时直接通知显示，其他页面则返回打卡页。上传响应早于页面加载时，页面就绪后也能显示，不会为显示弹窗再次提交。结果一分钟后失效、退出登录时清除。时间限制保持启用，不再显示 UID 调试弹窗。
+
+读取 UID 后可核对 `[NFC 打卡上传结果]` 的 HTTP 状态、业务码与钉钉排队状态，再刷新记录页，通过 `[远端打卡流水]` 核对服务器返回的流水 ID 和时间；本地成功提示和钉钉入队状态不能单独证明钉钉已完成同步。
+
+正式包可能屏蔽 JS 控制台日志，以上验证摘要同时写入 Android 的 `NfcCheckin` 标签，可用 `adb logcat -s NfcCheckin:I` 读取；日志不包含登录 Token。诊断桥接失败时不影响实际请求。
+
+碰卡唤起后的打卡结果通过 `components/checkin-result/index.vue` 在应用内显示，不依赖 Push 模块。不要在未集成 Push 的安装包中调用 `plus.push.createMessage`，否则运行时会弹出“打包时未添加 push 模块”的提示。
 
 ## 难点二：钉钉第三方登录的三次方案迭代
 
