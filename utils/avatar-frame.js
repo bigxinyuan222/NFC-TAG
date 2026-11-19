@@ -10,7 +10,7 @@ export const AVATAR_FRAMES = [
 	{ id: 'nightrose', name: '夜玫', className: 'avatar-frame--nightrose', overlay: '/static/frames/frame-nightrose.png', requiredDays: 3 },
 	{ id: 'bluebow', name: '蓝蝶', className: 'avatar-frame--bluebow', overlay: '/static/frames/frame-bluebow.png', requiredDays: 3 },
 	{ id: 'bunnyred', name: '兔红', className: 'avatar-frame--bunnyred', overlay: '/static/frames/frame-bunnyred.png', handLeft: '/static/frames/frame-bunnyred-hand-l.png', handRight: '/static/frames/frame-bunnyred-hand-r.png', requiredDays: 5 },
-	// 指定姓名才能用的头像框：列表里所有人可见，选择时校验姓名，不匹配弹窗拦截
+	// 指定姓名才能用的头像框：仅姓名命中 allowedUserNames 的用户可见
 	{ id: 'momtalk', name: '唠叨', className: 'avatar-frame--momtalk', overlay: '/static/frames/frame-momtalk.png', allowedUserNames: ['刘子怡'] },
 	// 专属头像框：仅 allowedPrefixes 命中的用户可见
 	{ id: 'king', name: '王者专属', className: 'avatar-frame--king', overlay: '/static/frames/hao.png', allowedPrefixes: ['200465'] },
@@ -26,11 +26,21 @@ function isValidFrameId(frameId) {
 
 /**
  * 判断某个头像框对当前用户是否可见
- * 没有 allowedPrefixes 的框 = 全员可见
+ * 没有 allowedPrefixes / allowedUserNames 的框 = 全员可见
+ * 有 allowedUserNames 的框 = 只有姓名在列表里的用户可见
  * 有 allowedPrefixes 的框 = 只有 prefix 在列表里的用户可见
  */
 function isFrameVisible(frame, session) {
-	if (!frame || !frame.allowedPrefixes || !frame.allowedPrefixes.length) {
+	if (!frame) {
+		return false
+	}
+	if (frame.allowedUserNames && frame.allowedUserNames.length) {
+		const userName = session && session.userName ? String(session.userName).trim() : ''
+		if (frame.allowedUserNames.indexOf(userName) === -1) {
+			return false
+		}
+	}
+	if (!frame.allowedPrefixes || !frame.allowedPrefixes.length) {
 		return true
 	}
 	const prefix = session && session.dingtalkUserIdPrefix ? String(session.dingtalkUserIdPrefix) : ''
@@ -46,7 +56,7 @@ export function getAvailableFrames(session) {
 
 /**
  * 指定姓名的头像框：当前用户姓名不在 allowedUserNames 内则不可用
- * 这类框在列表里对所有人可见，只是选择时会弹窗拦截
+ * allowedUserNames 已同时参与可见性过滤，此处作为选择时的二次拦截
  */
 export function isFrameOwnerDenied(frame, session) {
 	if (!frame || !frame.allowedUserNames || !frame.allowedUserNames.length) {
