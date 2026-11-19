@@ -39,6 +39,23 @@
 					</picker>
 				</view>
 
+				<view class="field">
+					<text class="label">所属公司</text>
+					<picker
+						class="org-picker"
+						mode="selector"
+						:range="orgNames"
+						:value="orgIndex"
+						@change="handleOrgChange"
+					>
+						<view class="input-wrap picker-wrap">
+							<image class="input-icon" src="/static/icons/building.svg" mode="aspectFit" />
+							<text class="input org-value">{{ orgNames[orgIndex] }}</text>
+							<image class="picker-arrow" src="/static/icons/chevron-right.svg" mode="aspectFit" />
+						</view>
+					</picker>
+				</view>
+
 				<view v-if="!isLoginMode" class="field">
 					<text class="label">手机号</text>
 					<view class="input-wrap">
@@ -59,22 +76,6 @@
 					<view class="divider-line"></view>
 					<text class="divider-text">其他登录方式</text>
 					<view class="divider-line"></view>
-				</view>
-				<view v-if="isLoginMode" class="field">
-					<text class="label">所属公司</text>
-					<picker
-						class="org-picker"
-						mode="selector"
-						:range="orgNames"
-						:value="orgIndex"
-						@change="handleOrgChange"
-					>
-						<view class="input-wrap picker-wrap">
-							<image class="input-icon" src="/static/icons/building.svg" mode="aspectFit" />
-							<text class="input org-value">{{ orgNames[orgIndex] }}</text>
-							<image class="picker-arrow" src="/static/icons/chevron-right.svg" mode="aspectFit" />
-						</view>
-					</picker>
 				</view>
 				<view v-if="isLoginMode" class="ding-btn" @tap.stop="dingLogin">
 					<text class="ding-badge">钉</text>
@@ -224,7 +225,7 @@
 
 				this.isSubmitting = true
 				try {
-					const result = await registerAccount({ userName, department, phone, password })
+					const result = await registerAccount({ userName, department, mobile: phone, password, dingTalkOrg: DINGTALK_ORGS[this.orgIndex].key })
 					console.log('[注册成功]', {
 						userName,
 						department,
@@ -353,7 +354,7 @@
 						return
 					}
 					uni.showLoading({ title: '正在登录...', mask: true })
-					const result = await loginByDingTalk(auth.authCode, auth.state)
+					const result = await loginByDingTalk(auth.authCode, org.key)
 					uni.hideLoading()
 					this.saveUserSession(result)
 					uni.showToast({ title: '登录成功', icon: 'success' })

@@ -58,6 +58,8 @@ static/      图片和图标资源
 
 ## 难点一：NFC 碰一碰读取卡片出厂 UID
 
+冷启动故障的定位、逐步修改原理和实机证据见：[NFC 冷启动问题修复原理](D:/App/NFC-TAG/docs/NFC冷启动问题修复原理.md)。
+
 ### 先分清两种碰卡场景
 
 1. **碰卡启动 APP**：APP 没在前台，系统识别到 NFC 后，根据 manifest 里的 intent-filter 把 APP 拉起来，卡片数据通过启动 intent 带进来。

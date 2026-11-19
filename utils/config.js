@@ -16,6 +16,16 @@ export const DINGTALK_ORGS = [
 		key: 'org_lezhiedu',
 		clientId: DINGTALK_APP_KEY, // 河南乐知院教育科技有限公司（沿用原有 appId）
 		name: '河南乐知院教育科技有限公司'
+	},
+	{
+		key: 'org_innov307',
+		clientId: 'dingelj62kh935fuu3mz', // 307智能创新小组
+		name: '307智能创新小组'
+	},
+	{
+		key: 'org_yuanjing',
+		clientId: 'dingcis4oxmfo09stwzy', // 源境AI
+		name: '源境AI'
 	}
 ]
 
